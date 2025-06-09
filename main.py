@@ -5,4 +5,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-a=2
+a = 2
