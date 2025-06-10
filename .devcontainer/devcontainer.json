@@ -7,7 +7,10 @@
       "extensions": [
         "ms-python.python",
         "streetsidesoftware.code-spell-checker",
-        "esbenp.prettier-vscode"
+        "mohsen1.prettify-json",
+        "tamasfe.even-better-toml",
+        "ms-python.debugpy",
+        "charliermarsh.ruff"
       ]
     }
   }

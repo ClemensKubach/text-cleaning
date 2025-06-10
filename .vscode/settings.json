@@ -1,0 +1,13 @@
+{
+    "files.autoSave": "onFocusChange",
+    "python.terminal.activateEnvironment": true,
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit"
+        }
+    },
+    "ruff.fixAll": true,
+    "ruff.organizeImports": true,
+}
