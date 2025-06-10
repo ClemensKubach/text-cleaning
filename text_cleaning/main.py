@@ -1,11 +1,11 @@
-from text_cleaning.denoising.run_denoise import denoise_text
-from text_cleaning.evaluation.run_eval import evaluate
+from text_cleaning.denoising.denoising import denoise
+from text_cleaning.evaluation.evaluation import evaluate
 
 
 def main():
-    print("Hello from text-cleaning!")
-    cleaned_text = denoise_text()
-    score = evaluate(cleaned_text)
+    noisy_text = "This is some noisy text."
+    cleaned_text = denoise(noisy_text)
+    score = evaluate(noisy_text, cleaned_text)
     print(f"Score: {score}")
 
 

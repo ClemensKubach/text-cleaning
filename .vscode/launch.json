@@ -1,0 +1,38 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Run text_cleaning.main",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "text_cleaning.main",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}${pathSeparator}${text_cleaning}:${env:PYTHONPATH}"
+            }
+        },
+        {
+            "name": "Python: Run text_cleaning.denoising.denoising",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "text_cleaning.denoising.denoising",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}${pathSeparator}${text_cleaning}:${env:PYTHONPATH}"
+            }
+        },
+        {
+            "name": "Python: Run text_cleaning.evaluation.evaluation",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "text_cleaning.evaluation.evaluation",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}${pathSeparator}${text_cleaning}:${env:PYTHONPATH}"
+            }
+        }
+    ]
+}
