@@ -14,6 +14,8 @@ def main():
 
     noisy_text = "This is s0me no1sy text."
     cleaned_text = denoise(noisy_text)
+    print(f"Noisy text: {noisy_text}")
+    print(f"Cleaned text: {cleaned_text}")
 
     score = evaluate(noisy_text, cleaned_text)
     print(f"Score: {score}")

@@ -38,9 +38,11 @@ def _load_model(
     global DENOISING_MODEL, DENOISING_TOKENIZER
 
     if DENOISING_MODEL is None or DENOISING_TOKENIZER is None:
+        DENOISING_MODEL = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype=torch.float16, device_map="auto"
+        ).eval()
         DENOISING_TOKENIZER = AutoTokenizer.from_pretrained(model_name)
         DENOISING_TOKENIZER.pad_token = DENOISING_TOKENIZER.eos_token
-        DENOISING_MODEL = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16, device_map="auto")
     return DENOISING_MODEL, DENOISING_TOKENIZER
 
 
@@ -148,12 +150,9 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
         The denoised chunk.
     """
     # Construct the prompt for denoising
-    prompt = f"""Please clean and denoise the following OCR text, fixing any errors while preserving the original meaning. 
-    Pay special attention to:
-    1. Character substitutions and encoding issues
-    2. Spacing and formatting
-    3. Punctuation and capitalization
-    4. Line breaks and paragraph structure
+    prompt = f"""Please clean and denoise the following OCR text, fixing any errors while preserving the original words and meaning.
+    
+    In any case, only output the cleaned version of the text, no other text!
     
     OCR Text: {chunk.text}
     
