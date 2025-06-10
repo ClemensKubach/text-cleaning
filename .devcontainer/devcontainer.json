@@ -10,7 +10,8 @@
         "mohsen1.prettify-json",
         "tamasfe.even-better-toml",
         "ms-python.debugpy",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "yzhang.markdown-all-in-one"
       ]
     }
   }
