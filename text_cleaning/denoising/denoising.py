@@ -1,7 +1,12 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
+from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from text_cleaning.constants import DATA_DIR
+from text_cleaning.utils import do_blocking_hf_login, load_data, model_name_to_path_compatible, save_data
 
 
 @dataclass
@@ -149,44 +154,58 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
     Returns:
         The denoised chunk.
     """
-    # Construct the prompt for denoising
-    prompt = f"""Please clean and denoise the following OCR text, fixing any errors while preserving the original words and meaning.
-    
-    In any case, only output the cleaned version of the text, no other text!
-    
-    OCR Text: {chunk.text}
-    
-    Cleaned text:"""
+    # Construct the prompt for denoising using a chat template
+    messages = [
+        {
+            "role": "user",
+            "content": f"""Please clean and denoise the following OCR text. Correct any errors you find, but make sure to preserve the original meaning and words as much as possible.
+
+            Your output should only be the cleaned text, without any additional comments or explanations.
+
+            OCR Text:
+            {chunk.text}
+            """,
+        },
+    ]
+    prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
     # Tokenize and generate
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     outputs = model.generate(
         **inputs,
-        max_new_tokens=512,
-        temperature=0.3,  # Lower temperature for more focused corrections
+        max_new_tokens=1500,
+        temperature=0.2,  # Lower temperature for more focused corrections
         top_p=0.9,
         do_sample=True,
         pad_token_id=tokenizer.eos_token_id,
     )
 
     # Decode and extract the cleaned text
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    cleaned_chunk = generated_text.split("Cleaned text:")[-1].strip()
+    output_tokens = outputs[0][len(inputs.input_ids[0]) :]
+    cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
     return TextChunk(cleaned_chunk, chunk.start, chunk.end)
 
 
-def denoise(text: str) -> str:
+def denoise(
+    text: str, model_name: str = "google/gemma-3-1b-it", chunk_size: int | None = None, overlap: int = 100
+) -> str:
     """
     Denoise OCR text using the Gemma model, handling long texts with overlapping chunks.
 
     Args:
         text: The OCR text to be denoised.
+        model_name: The name of the model to use for denoising.
+        chunk_size: The size of the chunks to split the text into.
+        overlap: The overlap between the chunks.
 
     Returns:
         The denoised text.
     """
-    model, tokenizer = _load_model()
-    text_chunks = _split_text_with_overlap(text)
+    model, tokenizer = _load_model(model_name)
+    if chunk_size is not None:
+        text_chunks = _split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
+    else:
+        text_chunks = [TextChunk(text, 0, len(text))]
 
     denoised_chunks = []
     for chunk in text_chunks:
@@ -194,3 +213,52 @@ def denoise(text: str) -> str:
 
     # Merge the denoised chunks, handling overlaps
     return _merge_overlapping_chunks(denoised_chunks)
+
+
+def denoise_dataset(
+    noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
+    model_name: str = "google/gemma-3-1b-it",
+    chunk_size: int | None = 1000,
+    overlap: int = 100,
+    subset: list[int] | None = None,
+) -> str:
+    """
+    Denoise a dataset of text.
+
+    The dataset is expected to be in the format of a JSON file with the following structure:
+    {
+        "1": "...",
+        "2": "...",
+        ...
+    }
+
+    The denoised data will be saved to the same
+
+    Args:
+        noisy_data_path: The path to the noisy dataset.
+
+    Returns:
+        The denoised text.
+    """
+    noisy_data = load_data(noisy_data_path)
+    print(f"Loaded noisy data from {noisy_data_path}")
+
+    if subset is not None:
+        noisy_data = {k: v for k, v in noisy_data.items() if k in subset}
+        print(f"Using subset of {len(noisy_data)} pages")
+
+    denoised_data: dict[int, str] = {}
+    for i in tqdm(noisy_data):
+        noisy_text = noisy_data[i]
+        denoised_data[i] = denoise(noisy_text, model_name=model_name, chunk_size=chunk_size, overlap=overlap)
+    denoised_file_path = noisy_data_path.with_name(
+        f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"
+    )
+    save_data(denoised_file_path, denoised_data)
+    print(f"Denoised data saved to {denoised_file_path}")
+    return denoised_data, denoised_file_path
+
+
+if __name__ == "__main__":
+    do_blocking_hf_login()
+    denoise_dataset()
