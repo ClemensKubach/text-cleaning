@@ -50,7 +50,7 @@ def load_data(file_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre
     return {int(k): v for k, v in data.items()}
 
 
-def save_data(file_path: Path, data: dict[int, str]) -> None:
+def save_data(file_path: Path, data: dict) -> None:
     """
     Saves data to a JSON file.
 
@@ -59,7 +59,7 @@ def save_data(file_path: Path, data: dict[int, str]) -> None:
         data: The data to save.
     """
     with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 
 def model_name_to_path_compatible(model_name: str) -> str:

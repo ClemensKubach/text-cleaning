@@ -13,7 +13,7 @@ def main() -> None:
     do_blocking_hf_login()
 
     print("Denoising given dataset ...")
-    _, denoised_data_path = denoise_dataset(subset=[3])
+    _, denoised_data_path = denoise_dataset()  # denoise_dataset(subset=[3])
     print("Evaluating denoised data...")
     evaluate_dataset(denoised_data_path=denoised_data_path)
 
