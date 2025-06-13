@@ -139,6 +139,7 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
                     merge_point = (overlap_end - overlap_start) // 2
             # Add the non-overlapping part
             result.append(chunk.text[merge_point:])
+
         current_pos = chunk.end
     return " ".join(result)
 
@@ -158,11 +159,9 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
     messages = [
         {
             "role": "user",
-            "content": f"""Please clean and denoise the following OCR text. Correct any errors you find, but make sure to preserve the original meaning and words as much as possible.
+            "content": f"""clean and denoise the following output of the optical character recognition(OCR) system. Your output should only contain the cleaned text.
 
-            Your output should only be the cleaned text, without any additional comments or explanations.
-
-            OCR Text:
+            OCR Text to denoise:
             {chunk.text}
             """,
         },
@@ -181,8 +180,10 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
     )
 
     # Decode and extract the cleaned text
-    output_tokens = outputs[0][len(inputs.input_ids[0]) :]
+    output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
     cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
+    print('cleaned text \n')
+    print(cleaned_chunk)
     return TextChunk(cleaned_chunk, chunk.start, chunk.end)
 
 
@@ -210,6 +211,7 @@ def denoise(
     denoised_chunks = []
     for chunk in text_chunks:
         denoised_chunks.append(_denoise_chunk(chunk, model, tokenizer))
+        
 
     # Merge the denoised chunks, handling overlaps
     return _merge_overlapping_chunks(denoised_chunks)

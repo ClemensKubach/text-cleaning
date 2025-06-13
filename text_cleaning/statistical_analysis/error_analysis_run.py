@@ -42,18 +42,7 @@ for key in keys:
 
     all_space_added += spaces_count[0]
     all_space_subtracted += spaces_count[1]
-    # mistakes.sort(key = lambda x: -x[1])
-    # print(mistakes)
-
-    # print(f'count of added spaces: {spaces_count[0]}')
-    # print(f'count of deleted spaces: {spaces_count[1]}')
-
-    # print('space subtracted examples')
-    # for element in space_subtracted:
-    #     print(element)
-    # print('space added examples')
-    # for element in space_added:
-    #     print(element)
+    
 print(mistakes.keys())
 
 '''changing the space mistakes into proper format for the normalization algorithm'''
@@ -84,43 +73,10 @@ print(mistakes_normalized_space_subtracted)
 
 
 '''most commonly happening mistakes by the unelative count of the them, not normalized by the gt letter frequency '''
-# space_mistakes = {"space_added":all_space_added,"space_subtracted":all_space_subtracted}
 
-# mistakes,visual_level_mistakes,space_mistakes = error_analysis.normalize_counts([mistakes,visual_level_mistakes,space_added_mistakes,space_subtracted_mistakes])
-# common_mistakes = error_analysis.cluster_mistakes(mistakes)
-# mistakes = [(key,value) for key,value in mistakes.items()]
-# mistakes.sort(key = lambda x: -x[1])
-# print(mistakes)
-# print(all_space_added)
-# print(all_space_subtracted)
-# common_visual_mistakes = error_analysis.cluster_mistakes(visual_level_mistakes)
-# common_mistakes.sort(key = lambda x: -x[1])
-# #print('the most common character level mistakes found in the text')
-# #print(common_mistakes)
-# for element in common_mistakes:
-#      print(str(element))
-# #print('the most common visual level - ie encompasing more than one character mistakes'\
-# #'found in the text')
-# #for element in common_visual_mistakes:
-#      #print(str(element))
 
 with open(path+file_write, 'w',encoding='utf-8') as write_file:
-     # write_file.write('the most common mistakes on the one character level')
-     # write_file.write(str(common_mistakes))
-     # write_file.write('\n')
-     # write_file.write('the most common visual mistakes')
-     # #for element in common_visual_mistakes:
-     # write_file.write(str(common_visual_mistakes))
-     # write_file.write('\n')
-     # write_file.write('the mistakes regarding the  added spaces')
-     # write_file.write(str(space_added_mistakes))
-     # write_file.write('\n')
-     # write_file.write('the mistakes regarding the  subtracted spaces')
-     # write_file.write(str(space_subtracted_mistakes))
-     # write_file.write('\n')
-     # write_file.write('mistakes normalized by the letter i.e mistake/whole_gt_letter_occurrences')
-     # write_file.write(str(mistakes_normalized_letter_common))
-     # write_file.close()
+     
 
      write_file.write(' the most common substitution mistakes with respect to the occurrence of ground truth letter' \
      'example of ratio: (mistakenly b instead of h)/occurences of h in ground truth ')
