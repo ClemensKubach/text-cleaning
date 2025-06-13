@@ -3,9 +3,8 @@ import string
 from sklearn.cluster import KMeans
 import numpy as np
 from sklearn.model_selection import train_test_split
-
-
-
+from collections import Counter 
+import json
 
 
 VISUAL_PATTERNS = {
@@ -16,12 +15,54 @@ VISUAL_PATTERNS = {
     'd' : 'cl',
     'w' : 'vv'
 }
+VISUAL_PATTERNS_BIGRAMS = ['rn','cl','vv']
+
+def count_all_characters_of_interest(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)  # Load the JSON data
+    
+    # Combine all text values from the JSON dictionary
+    text = ' '.join(str(value) for value in data.values())
+    
+    # Remove newlines and other unwanted whitespace
+    text = text.replace('\n', '').replace('\r', '').strip()
+    
+    # Initialize counts
+    char_counts = dict()
+    
+    # Initialize bigrams with 0 counts
+    for bigram in VISUAL_PATTERNS_BIGRAMS:
+        char_counts[bigram] = 0
+    
+    # Count characters and bigrams
+    for i in range(len(text)):
+        # Count single characters
+        char = text[i]
+        if char in char_counts:
+            char_counts[char] += 1
+        else:
+            char_counts[char] =1
+        
+        # Count bigrams (only if we're not at the last character)
+        if i < len(text) - 1:
+            bigram = text[i:i+2]
+            if bigram in VISUAL_PATTERNS_BIGRAMS:
+                char_counts[bigram] += 1
+                
+    return char_counts  # Convert back to regular dict
 
 def normalize_counts(count_dictionaries):
     s = 0
     for item in count_dictionaries:
         s +=  sum([v for v in item.values()])
     return [{k:v/s for k,v in dictionary.items()} for dictionary in count_dictionaries]
+
+def normalize_counts_letter(dictionary,occurrence_dictionary):
+    
+    dictionary = {key:value for key,value in dictionary.items() if value!=0}
+    return {k:round(v/occurrence_dictionary[k[1]],3) for k,v in dictionary.items()}
+
+
 
 def detect_visual_errors(ocr_word, gt_word,visual_mistakes_matches):
     #visual_mistakes_matches = {(k,v):0 for k,v in VISUAL_PATTERNS.items()}
@@ -113,7 +154,7 @@ def align_words(gt_words, ocr_words, char_level_edits,visual_level_edits=None) -
         if direct_dist <= merge_dist and direct_dist <= split_dist:
             aligned.append((gt_word, ocr_word))
             visual_level_edits = detect_visual_errors(ocr_word,gt_word,visual_level_edits)
-            subs = extract_char_subs(gt_word, ocr_word)
+            subs = extract_char_subs(ocr_word,gt_word)
             for sub in subs:
                 if sub in char_level_edits:
                     char_level_edits[sub] += 1
@@ -126,7 +167,7 @@ def align_words(gt_words, ocr_words, char_level_edits,visual_level_edits=None) -
         elif merge_dist < split_dist:
             aligned.append((gt_word, (ocr_word, ocr_words[j+1])))
             visual_level_edits = detect_visual_errors(merged_ocr,gt_word,visual_level_edits)
-            subs = extract_char_subs(gt_word, merged_ocr)
+            subs = extract_char_subs( merged_ocr, gt_word)
             for sub in subs:
                 if sub in char_level_edits:
                     char_level_edits[sub] += 1
@@ -141,7 +182,7 @@ def align_words(gt_words, ocr_words, char_level_edits,visual_level_edits=None) -
         else:
             aligned.append(((gt_word, gt_words[i+1]), ocr_word))
             visual_level_edits = detect_visual_errors(ocr_word,merged_gt,visual_level_edits)
-            subs = extract_char_subs(merged_gt, ocr_word)
+            subs = extract_char_subs(ocr_word,merged_gt)
             for sub in subs:
                 if sub in char_level_edits:
                     char_level_edits[sub] += 1
