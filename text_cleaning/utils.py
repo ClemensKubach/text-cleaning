@@ -1,9 +1,11 @@
+import json
 import os
+from pathlib import Path
 
 from huggingface_hub import login
 from huggingface_hub.errors import HfHubHTTPError
 
-from text_cleaning.constants import IN_COLAB, WANDB_DIR
+from text_cleaning.constants import DATA_DIR, IN_COLAB, WANDB_DIR
 
 
 def setup_wandb():
@@ -31,3 +33,37 @@ def do_blocking_hf_login():
             input("Press enter of finish login!")
     except HfHubHTTPError:
         print("Login via HF_TOKEN secret/envvar and via manual login widget failed or not authorized.")
+
+
+def load_data(file_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json") -> dict[int, str]:
+    """
+    Loads data from a JSON file.
+
+    Args:
+        file_path: The path to the dataset.
+
+    Returns:
+        A dictionary mapping page numbers to text.
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return {int(k): v for k, v in data.items()}
+
+
+def save_data(file_path: Path, data: dict) -> None:
+    """
+    Saves data to a JSON file.
+
+    Args:
+        file_path: The path to the dataset.
+        data: The data to save.
+    """
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+
+def model_name_to_path_compatible(model_name: str) -> str:
+    """
+    Converts a model name to a path compatible string.
+    """
+    return model_name.replace("/", "-")
