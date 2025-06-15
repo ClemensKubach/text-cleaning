@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from collections import Counter 
 import json
 
-
+'''potentially misleading visual resemblances of patterns'''
 VISUAL_PATTERNS = {
     'rn': 'm',
     'cl': 'd',
@@ -17,7 +17,7 @@ VISUAL_PATTERNS = {
 }
 VISUAL_PATTERNS_BIGRAMS = ['rn','cl','vv']
 
-def count_all_characters_of_interest(file_path):
+def count_all_characters_of_interest(file_path)->dict:
     with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)  # Load the JSON data
     
@@ -43,29 +43,30 @@ def count_all_characters_of_interest(file_path):
         else:
             char_counts[char] =1
         
-        # Count bigrams (only if we're not at the last character)
+        # Count bigrams 
         if i < len(text) - 1:
             bigram = text[i:i+2]
             if bigram in VISUAL_PATTERNS_BIGRAMS:
                 char_counts[bigram] += 1
                 
-    return char_counts  # Convert back to regular dict
+    return char_counts  
 
-def normalize_counts(count_dictionaries):
+'''normalizing the count of errors with respect to all errors'''
+def normalize_counts(count_dictionaries)->list[dict]:
     s = 0
     for item in count_dictionaries:
         s +=  sum([v for v in item.values()])
     return [{k:v/s for k,v in dictionary.items()} for dictionary in count_dictionaries]
 
-def normalize_counts_letter(dictionary,occurrence_dictionary):
+'''normalize the count of errors with respect to the ground-truth letter'''
+def normalize_counts_letter(dictionary,occurrence_dictionary)->list[dict]:
     
     dictionary = {key:value for key,value in dictionary.items() if value!=0}
     return {k:round(v/occurrence_dictionary[k[1]],3) for k,v in dictionary.items()}
 
 
-
-def detect_visual_errors(ocr_word, gt_word,visual_mistakes_matches):
-    #visual_mistakes_matches = {(k,v):0 for k,v in VISUAL_PATTERNS.items()}
+'''visual error detection between ocr and gt word'''
+def detect_visual_errors(ocr_word, gt_word,visual_mistakes_matches)->dict:
     for pattern, true_char in VISUAL_PATTERNS.items():
         i = 0
         while i < len(ocr_word) and i < len(gt_word):
@@ -79,29 +80,38 @@ def detect_visual_errors(ocr_word, gt_word,visual_mistakes_matches):
 
     return visual_mistakes_matches
 
-
-def split_dataset(keys):
+'''function used to split-dataset'''
+def split_dataset(keys)->list[list,list]:
     X_train, X_test = train_test_split(keys, test_size=0.2, random_state=42)
     return X_train, X_test
 
-
-def cluster_mistakes(substitutions):
+'''function clustering the mistakes, to asses which are common and which not '''
+def cluster_mistakes(substitutions,num_clusters=2,clusters_to_return=1)->list[tuple]:
     counts = np.array(list(substitutions.values())).reshape(-1, 1)
 
-    kmeans = KMeans(n_clusters=2, random_state=42).fit(counts)
+    kmeans = KMeans(n_clusters=num_clusters, random_state=42).fit(counts)
     labels = kmeans.labels_
-    frequent_cluster = np.argmax(kmeans.cluster_centers_)
-    frequent_mistakes = [(k,substitutions[k]) for k, v in zip(substitutions.keys(), counts) if labels[counts.tolist().index([v])] == frequent_cluster]
+    # frequent_cluster = np.argmax(kmeans.cluster_centers_)
+    # frequent_mistakes = [(k,substitutions[k]) for k, v in zip(substitutions.keys(), counts) if labels[counts.tolist().index([v])] == frequent_cluster]
+    top_clusters = np.argsort(kmeans.cluster_centers_.flatten())[-clusters_to_return:]
 
-    return  frequent_mistakes
+    # Get mistakes belonging to these top clusters
+    frequent_mistakes = [
+        (k, substitutions[k]) 
+        for k, v, lbl in zip(substitutions.keys(), counts.flatten(), labels) 
+        if lbl in top_clusters
+    ]
+
+    return frequent_mistakes
+    #return  frequent_mistakes
 
 
-# Tokenize a sentence into a list of words
+'''Tokenize a sentence into a list of words'''
 def tokenize_into_words(sentence) -> list[str]:
     words = sentence.split()  # Split by spaces
     return words
 
-# Extract character-level substitutions from the Levenshtein edit operations
+'''Extract character-level substitutions from the Levenshtein edit operations'''
 def extract_char_subs(ocr, gt) -> list[tuple[str, str]]:
     ops = Levenshtein.editops(ocr, gt)  # Get list of edit operations to convert ocr -> gt
     subs = []
@@ -110,7 +120,8 @@ def extract_char_subs(ocr, gt) -> list[tuple[str, str]]:
             subs.append((ocr[i], gt[j]))  # Collect character substitutions
     return subs
 
-# Align words from ground truth and OCR output and collect character-level edits and space errors
+''' the main logic function ,Aligning words from ground truth and OCR output basing on the Levenshtein distance 
+ and collectting the character-level substitutions, visual level mistakes and space errors '''
 def align_words(gt_words, ocr_words, char_level_edits,visual_level_edits=None) -> tuple[dict[tuple[str, str], int], list[list[tuple[str, str]]], list[list[tuple[tuple[str, str], str]]], list[int],dict[tuple[str, str], int]]:
 
     i, j = 0, 0  # Indices for ground truth and OCR word lists
@@ -192,9 +203,6 @@ def align_words(gt_words, ocr_words, char_level_edits,visual_level_edits=None) -
             space_subtracted_examples.append([((gt_word, gt_words[i+1]), ocr_word)])
             i += 2
             j += 1
-
-    # Print aligned word pairs for debugging
-    print(aligned)
 
     # Return:
     # - Dictionary of character substitutions with counts
