@@ -121,7 +121,7 @@ def extract_char_subs(ocr, gt) -> list[tuple[str, str]]:
     return subs
 
 ''' the main logic function ,Aligning words from ground truth and OCR output basing on the Levenshtein distance 
- and collectting the character-level substitutions, visual level mistakes and space errors '''
+ and collecting the character-level substitutions, visual level mistakes and space errors '''
 def align_words(gt_words, ocr_words, char_level_edits,visual_level_edits=None) -> tuple[dict[tuple[str, str], int], list[list[tuple[str, str]]], list[list[tuple[tuple[str, str], str]]], list[int],dict[tuple[str, str], int]]:
 
     i, j = 0, 0  # Indices for ground truth and OCR word lists

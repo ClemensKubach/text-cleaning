@@ -159,9 +159,9 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
     messages = [
         {
             "role": "user",
-            "content": f"""clean and denoise the following output of the optical character recognition(OCR) system. Your output should only contain the cleaned text.
+            "content": f"""clean and denoise the output of the optical character recognition(OCR) system. Your output should only contain the cleaned text.
 
-            OCR Text to denoise:
+            output of the optical character recognition(OCR) system to denoise:
             {chunk.text}
             """,
         },
