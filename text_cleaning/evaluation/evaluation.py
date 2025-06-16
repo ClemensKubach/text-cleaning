@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from pathlib import Path
 import nltk
+import logging
 from nltk.translate.bleu_score import sentence_bleu
 from nltk.tokenize import word_tokenize
 from rouge_score import rouge_scorer
@@ -10,6 +11,8 @@ from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import load_data, save_data
 import argparse
 
+logger = logging.getLogger(__name__)
+
 nltk.download("punkt_tab")
 
 
@@ -18,7 +21,7 @@ def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
     matched = 0
     clean_len = len(clean_text)
     noisy_len = len(noisy_text)
-    print(noisy_text)
+    logger.debug(noisy_text)
     while i < clean_len and i < noisy_len:
         if clean_text[i] == noisy_text[i]:
             matched += 1
@@ -78,27 +81,27 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
 
         if direct_dist <= merge_dist and direct_dist <= split_dist:
             current_ops = Levenshtein.editops(gt_word, ocr_word)
-            print(gt_word, ocr_word)
-            print(len(current_ops))
-            print("\n")
+            logger.debug(f"{gt_word} {ocr_word}")
+            logger.debug(f"Operations: {len(current_ops)}")
+            logger.debug("")
             ops_count += len(current_ops)
             i += 1
             j += 1
 
         elif merge_dist < split_dist:
             current_ops = Levenshtein.editops(gt_word, merged_ocr)
-            print(gt_word, ocr_word)
-            print(len(current_ops))
-            print("\n")
+            logger.debug(f"{gt_word} {ocr_word}")
+            logger.debug(f"Operations: {len(current_ops)}")
+            logger.debug("")
             ops_count += len(current_ops)
             i += 1
             j += 2
 
         else:
             current_ops = Levenshtein.editops(merged_gt, ocr_word)
-            print(gt_word, ocr_word)
-            print(len(current_ops))
-            print("\n")
+            logger.debug(f"{gt_word} {ocr_word}")
+            logger.debug(f"Operations: {len(current_ops)}")
+            logger.debug("")
             ops_count += len(current_ops)
             i += 2
             j += 1
@@ -110,7 +113,7 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
 
 def evaluate_CER(clean_text: str, noisy_text: str) -> float:
     divisor = len(clean_text)
-    print(divisor)
+    logger.debug(f"Divisor: {divisor}")
     return count_all_operations(clean_text, noisy_text) / divisor
 
 
@@ -145,11 +148,11 @@ def evaluate_dataset(
         The scores.
     """
     noisy_data = load_data(noisy_data_path)
-    print(f"Loaded noisy data from {noisy_data_path}")
+    logger.info(f"Loaded noisy data from {noisy_data_path}")
     clean_data = load_data(cleaned_data_path)
-    print(f"Loaded clean data from {cleaned_data_path}")
+    logger.info(f"Loaded clean data from {cleaned_data_path}")
     denoised_data = load_data(denoised_data_path)
-    print(f"Loaded denoised data from {denoised_data_path}")
+    logger.info(f"Loaded denoised data from {denoised_data_path}")
 
     scores: dict[int, float] = {}
     for i in tqdm(denoised_data):
@@ -160,7 +163,7 @@ def evaluate_dataset(
         scores[i] = score
     scores_file_path = denoised_data_path.with_name(f"{noisy_data_path.stem}_scores{noisy_data_path.suffix}")
     save_data(scores_file_path, scores)
-    print(f"Scores saved to {scores_file_path}")
+    logger.info(f"Scores saved to {scores_file_path}")
     return scores, scores_file_path
 
 

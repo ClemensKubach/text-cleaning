@@ -1,18 +1,28 @@
 from dataclasses import dataclass
 from pathlib import Path
+import logging
 
 import fire
-import torch
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoTokenizer, Pipeline
 
 from text_cleaning.constants import DATA_DIR
-from text_cleaning.utils import do_blocking_hf_login, load_data, model_name_to_path_compatible, save_data
-from typing import Literal, Union
+from text_cleaning.utils import (
+    do_blocking_hf_login,
+    load_data,
+    model_name_to_path_compatible,
+    save_data,
+    load_pipeline,
+    setup_logging,
+)
+from typing import Literal
 
 
 MAX_CONTEXT_TOKENS = 16000
 MAX_NEW_TOKENS = MAX_CONTEXT_TOKENS // 2
+DEFAULT_OVERLAP = 100
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -30,54 +40,7 @@ class TextChunk:
     end: int
 
 
-# Initialize model and tokenizer as global variables to avoid reloading
-DENOISING_MODEL: AutoModelForCausalLM | None = None
-DENOISING_TOKENIZER: AutoTokenizer | None = None
-MODEL_TYPE: str = ""
-
-
-def _load_model(
-    model_name: str = "google/gemma-3-1b-it", model_type: Literal["causal", "seq2seq"] = "causal"
-) -> tuple[Union[AutoModelForCausalLM, AutoModelForSeq2SeqLM], AutoTokenizer, Literal["causal", "seq2seq"]]:
-    """Load the small LLM and tokenizer for denoising if not already loaded.
-
-    Args:
-        model_name: The name of the model to load.
-        model_type: The type of model to load (causal or seq2seq).
-
-    Returns:
-        The model and tokenizer.
-    """
-    global DENOISING_MODEL, DENOISING_TOKENIZER, MODEL_TYPE
-
-    if DENOISING_MODEL is None or model_name not in str(DENOISING_MODEL.config._name_or_path):
-        DENOISING_MODEL = None
-        DENOISING_TOKENIZER = None
-        MODEL_TYPE = ""
-        if model_type == "causal":
-            try:
-                DENOISING_MODEL = AutoModelForCausalLM.from_pretrained(
-                    model_name, torch_dtype=torch.float16, device_map="auto"
-                ).eval()
-                MODEL_TYPE = "causal"
-            except ValueError:
-                raise ValueError(f"Wrong model type {model_type} for the model {model_name}")
-        elif model_type == "seq2seq":
-            try:
-                DENOISING_MODEL = AutoModelForSeq2SeqLM.from_pretrained(
-                    model_name, torch_dtype=torch.float16, device_map="auto"
-                ).eval()
-                MODEL_TYPE = "seq2seq"
-            except ValueError:
-                raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model")
-
-        DENOISING_TOKENIZER = AutoTokenizer.from_pretrained(model_name)
-        if MODEL_TYPE == "causal":
-            DENOISING_TOKENIZER.pad_token = DENOISING_TOKENIZER.eos_token
-    return DENOISING_MODEL, DENOISING_TOKENIZER, MODEL_TYPE
-
-
-def _split_text_with_overlap(text: str, chunk_size: int = MAX_CONTEXT_TOKENS, overlap: int = 200) -> list[TextChunk]:
+def _split_text_with_overlap(text: str, chunk_size: int, overlap: int) -> list[TextChunk]:
     """Split text into overlapping chunks using a sliding window approach.
 
     Each chunk includes some context from the previous and next chunks.
@@ -92,6 +55,8 @@ def _split_text_with_overlap(text: str, chunk_size: int = MAX_CONTEXT_TOKENS, ov
     """
     if len(text) <= chunk_size:
         return [TextChunk(text, 0, len(text))]
+    else:
+        logger.info(f"Splitting text of length {len(text)} into chunks of size {chunk_size} with overlap {overlap}")
 
     chunks = []
     start = 0
@@ -171,60 +136,53 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
 
 
 def _denoise_chunk(
-    chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, model_type: Literal["causal", "seq2seq"]
+    chunk: TextChunk,
+    text_pipeline: Pipeline,
+    tokenizer: AutoTokenizer,
+    model_type: Literal["causal", "seq2seq"],
 ) -> TextChunk:
     """Denoise a single chunk of text.
 
     Args:
         chunk: The chunk of text to denoise.
-        model: The model to use for denoising.
+        text_pipeline: The text generation pipeline to use for denoising.
         tokenizer: The tokenizer to use for denoising.
         model_type: The type of model being used.
 
     Returns:
         The denoised chunk.
     """
-    # Base prompt for all models
-    base_prompt = f"""Clean and denoise the given output text of the optical character recognition (OCR) system. VERY IMPORTANT: Output only denoised text
-    NOT OUTPUT anything else then the denoised text! Do not change whole words or sentences, only fix typos or similar mistakes.
+    is_instruction_model = (
+        model_type == "causal" and hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None
+    )
+    output_marker = "\n\nDenoised text:"
+    if is_instruction_model:
+        # For instruction-tuned models, use chat template if available
+        instruction_prompt = f"""Clean and denoise the given noisy text received from an optical character recognition (OCR) system. VERY IMPORTANT: Output only the denoised version of the text.
+        NOT OUTPUT anything else then the denoised text!
 
-    Given text to denoise:
-    {chunk.text}
-    """
-
-    # For instruction-tuned models, use chat template if available
-    if model_type == "causal" and hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
-        messages = [{"role": "user", "content": base_prompt}]
-        prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        Given noisy text that is to be denoised:
+        {chunk.text}
+        """
+        prompt = [{"role": "user", "content": instruction_prompt}]
+    elif model_type == "seq2seq":
+        prompt = chunk.text
     else:
-        # For base models, use a simpler prompt format
-        prompt = f"Input: {chunk.text}\nOutput:"
-
-    # Tokenize and generate
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-
-    # Get the model's default generation config
-    generation_config = model.generation_config
-
-    # Update generation config with our parameters
-    generation_config.max_new_tokens = MAX_NEW_TOKENS
-    generation_config.pad_token_id = tokenizer.eos_token_id
-    generation_config.do_sample = False  # Use greedy decoding for more consistent results
-
-    # Generate using the updated config
-    outputs = model.generate(**inputs, generation_config=generation_config)
-    output_tokens = outputs[0][len(inputs.input_ids[0]) :]
-    cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
+        prompt = f"Noisy text: {chunk.text}{output_marker}"
+    outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
+    generated_text = outputs[0]["generated_text"]
 
     # For base models, we need to clean up the output more carefully
-    if not (model_type == "causal" and hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None):
+    if is_instruction_model:
+        denoised_chunk_text = generated_text[-1]["content"]
+    else:
         # Extract text after the last "Output:" marker
-        if "\nOutput:" in cleaned_chunk:
-            cleaned_chunk = cleaned_chunk.split("\nOutput:")[-1].strip()
+        if output_marker in generated_text:
+            denoised_chunk_text = generated_text.split(output_marker)[-1].strip()
         else:
-            # Fallback to last line if no Output marker found
-            cleaned_chunk = cleaned_chunk.split("\n")[-1].strip()
-    return TextChunk(cleaned_chunk, chunk.start, chunk.end)
+            # Fallback to whole text if marker not found
+            denoised_chunk_text = generated_text.strip()
+    return TextChunk(denoised_chunk_text, chunk.start, chunk.end)
 
 
 def denoise(
@@ -232,7 +190,7 @@ def denoise(
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
     chunk_size: int | None = MAX_CONTEXT_TOKENS,
-    overlap: int = 100,
+    overlap: int = DEFAULT_OVERLAP,
 ) -> str:
     """
     Denoise OCR text using the chosen model.
@@ -247,7 +205,7 @@ def denoise(
     Returns:
         The denoised text.
     """
-    model, tokenizer, model_type = _load_model(model_name, model_type)
+    text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
     if chunk_size is not None:
         text_chunks = _split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
     else:
@@ -255,7 +213,7 @@ def denoise(
 
     denoised_chunks = []
     for chunk in text_chunks:
-        denoised_chunks.append(_denoise_chunk(chunk, model, tokenizer, model_type))
+        denoised_chunks.append(_denoise_chunk(chunk, text_pipeline, tokenizer, model_type))
 
     # Merge the denoised chunks, handling overlaps
     return _merge_overlapping_chunks(denoised_chunks)
@@ -266,7 +224,7 @@ def denoise_dataset(
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
     chunk_size: int | None = MAX_CONTEXT_TOKENS,
-    overlap: int = 100,
+    overlap: int = DEFAULT_OVERLAP,
     subset: list[int] | None = None,
 ) -> tuple[dict[int, str], Path]:
     """
@@ -293,11 +251,11 @@ def denoise_dataset(
         - The path where the denoised data was saved
     """
     noisy_data = load_data(noisy_data_path)
-    print(f"Loaded noisy data from {noisy_data_path}")
+    logger.info(f"Loaded noisy data from {noisy_data_path}")
 
     if subset is not None:
         noisy_data = {k: v for k, v in noisy_data.items() if k in subset}
-        print(f"Using subset of {len(noisy_data)} pages")
+        logger.info(f"Using subset of {len(noisy_data)} pages")
 
     denoised_data: dict[int, str] = {}
     for i in tqdm(noisy_data):
@@ -309,10 +267,11 @@ def denoise_dataset(
         f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"
     )
     save_data(denoised_file_path, denoised_data)
-    print(f"Denoised data saved to {denoised_file_path}")
+    logger.info(f"Denoised data saved to {denoised_file_path}")
     return denoised_data, denoised_file_path
 
 
 if __name__ == "__main__":
+    setup_logging()
     do_blocking_hf_login()
     fire.Fire(denoise_dataset, serialize=lambda _: None)
