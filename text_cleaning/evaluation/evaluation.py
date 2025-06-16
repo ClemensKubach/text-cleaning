@@ -10,7 +10,7 @@ from text_cleaning.utils import load_data, save_data
 from collections import Counter
 import argparse
 
-nltk.download('punkt')
+nltk.download('punkt_tab')
 
 def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
     i = 0
@@ -42,7 +42,8 @@ def evaluate_ROGUE( clean_text: str, noisy_text: str) -> float:
     prec = scores['rouge1'].precision
     rec =scores['rouge1'].recall
     f1 = scores['rouge1'].fmeasure
-    return (prec,rec,f1)
+    dict_to_return = {"precision":prec,"recall":rec,"f1":f1}
+    return dict_to_return
 def evaluate_BLUE(clean_text: str, noisy_text: str) -> float:
     noisy_text = word_tokenize(noisy_text)
     clean_text = word_tokenize(clean_text)
