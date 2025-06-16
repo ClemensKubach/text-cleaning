@@ -4,8 +4,12 @@ Text denoising
 ## Getting Started
 1. Run `uv sync` to install all dependencies and tools.
 2. Set environment variable HF_TOKEN for accessing Huggingface.
-3. Run program as module: `python -m text_cleaning.main`
+3. Run program as module:
 
+   To denoise the text run   `python -m text_cleaning.denoising.denoising --model_name --model_type`
+
+   To evaluate the denoising run  `python -m text_cleaning.evaluation.evaluation --metric`
+   
 ## Development
 A devcontainer is set up for this project.
 Open the project in your IDE using devcontainer and extensions, ruff and everything required for development is automatically installed.
