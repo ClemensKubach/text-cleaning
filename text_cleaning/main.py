@@ -1,15 +1,8 @@
 from text_cleaning.constants import DATA_DIR, LOG_DIR, WANDB_DIR
 from text_cleaning.denoising.denoising import denoise_dataset
-from text_cleaning.evaluation.evaluation import evaluate_dataset
+from text_cleaning.evaluation.evaluation import evaluate_CER, evaluate_dataset
 from text_cleaning.utils import do_blocking_hf_login
 import argparse
-
-
-def denoise_and_evaluate_dataset(model_name: str) -> None:
-    print(f"Denoising and evaluating dataset using {model_name} ...")
-    _, denoised_data_path = denoise_dataset()  # denoise_dataset(subset=[3])
-    print("Evaluating denoised data...")
-    evaluate_dataset(denoised_data_path=denoised_data_path)
 
 
 def main() -> None:
@@ -21,9 +14,9 @@ def main() -> None:
     do_blocking_hf_login()
 
     print("Denoising given dataset ...")
-    _, denoised_data_path = denoise_dataset()  # denoise_dataset(subset=[3])
+    _, denoised_data_path = denoise_dataset(subset=[3])
     print("Evaluating denoised data...")
-    evaluate_dataset(denoised_data_path=denoised_data_path)
+    evaluate_dataset(evaluation_method=evaluate_CER, denoised_data_path=denoised_data_path)
 
 
 if __name__ == "__main__":

@@ -1,14 +1,18 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import fire
 import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer
 
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import do_blocking_hf_login, load_data, model_name_to_path_compatible, save_data
-import argparse
 from typing import Literal, Union
+
+
+MAX_CONTEXT_TOKENS = 16000
+MAX_NEW_TOKENS = MAX_CONTEXT_TOKENS // 2
 
 
 @dataclass
@@ -33,12 +37,13 @@ MODEL_TYPE: str = ""
 
 
 def _load_model(
-    model_name: str = "google/gemma-3-1b-it", model_type: str = "causal"
+    model_name: str = "google/gemma-3-1b-it", model_type: Literal["causal", "seq2seq"] = "causal"
 ) -> tuple[Union[AutoModelForCausalLM, AutoModelForSeq2SeqLM], AutoTokenizer, Literal["causal", "seq2seq"]]:
     """Load the small LLM and tokenizer for denoising if not already loaded.
 
     Args:
         model_name: The name of the model to load.
+        model_type: The type of model to load (causal or seq2seq).
 
     Returns:
         The model and tokenizer.
@@ -55,16 +60,16 @@ def _load_model(
                     model_name, torch_dtype=torch.float16, device_map="auto"
                 ).eval()
                 MODEL_TYPE = "causal"
-            except ValueError as e:
-                raise ValueError("Wrong model type for the model") from e
+            except ValueError:
+                raise ValueError(f"Wrong model type {model_type} for the model {model_name}")
         elif model_type == "seq2seq":
             try:
                 DENOISING_MODEL = AutoModelForSeq2SeqLM.from_pretrained(
                     model_name, torch_dtype=torch.float16, device_map="auto"
                 ).eval()
                 MODEL_TYPE = "seq2seq"
-            except ValueError as e:
-                raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model") from e
+            except ValueError:
+                raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model")
 
         DENOISING_TOKENIZER = AutoTokenizer.from_pretrained(model_name)
         if MODEL_TYPE == "causal":
@@ -72,7 +77,7 @@ def _load_model(
     return DENOISING_MODEL, DENOISING_TOKENIZER, MODEL_TYPE
 
 
-def _split_text_with_overlap(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[TextChunk]:
+def _split_text_with_overlap(text: str, chunk_size: int = MAX_CONTEXT_TOKENS, overlap: int = 200) -> list[TextChunk]:
     """Split text into overlapping chunks using a sliding window approach.
 
     Each chunk includes some context from the previous and next chunks.
@@ -166,7 +171,7 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
 
 
 def _denoise_chunk(
-    chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, model_type: Literal["causal,seq2seq"]
+    chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, model_type: Literal["causal", "seq2seq"]
 ) -> TextChunk:
     """Denoise a single chunk of text.
 
@@ -174,75 +179,68 @@ def _denoise_chunk(
         chunk: The chunk of text to denoise.
         model: The model to use for denoising.
         tokenizer: The tokenizer to use for denoising.
+        model_type: The type of model being used.
 
     Returns:
         The denoised chunk.
     """
-    # Construct the prompt for denoising using a chat template
-    if model_type == "causal":
-        messages = [
-            {
-                "role": "user",
-                "content": f"""clean and denoise the output of the optical character recognition(OCR) system. VERY IMPORTANT: Output only denoised text
-                NOT OUTPUT anything else then the denoised text!.
+    # Base prompt for all models
+    base_prompt = f"""Clean and denoise the given output text of the optical character recognition (OCR) system. VERY IMPORTANT: Output only denoised text
+    NOT OUTPUT anything else then the denoised text! Do not change whole words or sentences, only fix typos or similar mistakes.
 
-                output of the optical character recognition(OCR) system to denoise:
-                {chunk.text}
-                """,
-            },
-        ]
+    Given text to denoise:
+    {chunk.text}
+    """
+
+    # For instruction-tuned models, use chat template if available
+    if model_type == "causal" and hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
+        messages = [{"role": "user", "content": base_prompt}]
         prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    else:
+        # For base models, use a simpler prompt format
+        prompt = f"Input: {chunk.text}\nOutput:"
 
-        # Tokenize and generate
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=1500,
-            temperature=0.2,  # Lower temperature for more focused corrections
-            top_p=0.95,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id,
-        )
-        output_tokens = outputs[0][len(inputs.input_ids[0]) :]
-        cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
-    elif model_type == "seq2seq":
-        prompt = f""" denoise the Output of the OCR system:
-        "{chunk.text}"
-        """
+    # Tokenize and generate
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=1500,
-            top_p=0.95,
-            do_sample=True,
-        )
-        output_tokens = outputs[0][len(inputs.input_ids[0]) :]
-        cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True)
+    # Get the model's default generation config
+    generation_config = model.generation_config
 
-        # output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
-        # cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
+    # Update generation config with our parameters
+    generation_config.max_new_tokens = MAX_NEW_TOKENS
+    generation_config.pad_token_id = tokenizer.eos_token_id
+    generation_config.do_sample = False  # Use greedy decoding for more consistent results
 
-    # Decode and extract the cleaned text
+    # Generate using the updated config
+    outputs = model.generate(**inputs, generation_config=generation_config)
+    output_tokens = outputs[0][len(inputs.input_ids[0]) :]
+    cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
 
-    print("cleaned text \n")
-    print(cleaned_chunk)
+    # For base models, we need to clean up the output more carefully
+    if not (model_type == "causal" and hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None):
+        # Extract text after the last "Output:" marker
+        if "\nOutput:" in cleaned_chunk:
+            cleaned_chunk = cleaned_chunk.split("\nOutput:")[-1].strip()
+        else:
+            # Fallback to last line if no Output marker found
+            cleaned_chunk = cleaned_chunk.split("\n")[-1].strip()
     return TextChunk(cleaned_chunk, chunk.start, chunk.end)
 
 
 def denoise(
     text: str,
     model_name: str = "google/gemma-3-1b-it",
-    model_type: str = "causal",
-    chunk_size: int | None = None,
+    model_type: Literal["causal", "seq2seq"] = "causal",
+    chunk_size: int | None = MAX_CONTEXT_TOKENS,
     overlap: int = 100,
 ) -> str:
     """
-    Denoise OCR text using the choosen model .
+    Denoise OCR text using the chosen model.
 
     Args:
         text: The OCR text to be denoised.
         model_name: The name of the model to use for denoising.
+        model_type: The type of model to use for denoising (causal or seq2seq).
         chunk_size: The size of the chunks to split the text into.
         overlap: The overlap between the chunks.
 
@@ -266,11 +264,11 @@ def denoise(
 def denoise_dataset(
     noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     model_name: str = "google/gemma-3-1b-it",
-    model_type: str = "causal",
-    chunk_size: int | None = 1000,
+    model_type: Literal["causal", "seq2seq"] = "causal",
+    chunk_size: int | None = MAX_CONTEXT_TOKENS,
     overlap: int = 100,
     subset: list[int] | None = None,
-) -> str:
+) -> tuple[dict[int, str], Path]:
     """
     Denoise a dataset of text.
 
@@ -281,15 +279,19 @@ def denoise_dataset(
         ...
     }
 
-    The denoised data will be saved to the same
-
     Args:
         noisy_data_path: The path to the noisy dataset.
+        model_name: The name of the model to use for denoising.
+        model_type: The type of the model to use for denoising (causal or seq2seq).
+        chunk_size: The size of the chunks to split the text into.
+        overlap: The overlap between the chunks.
+        subset: The subset of the data to denoise.
 
     Returns:
-        The denoised text.
+        A tuple containing:
+        - The denoised data dictionary
+        - The path where the denoised data was saved
     """
-    print(f"Denoising dataset using {model_name} and {model_type} ...")
     noisy_data = load_data(noisy_data_path)
     print(f"Loaded noisy data from {noisy_data_path}")
 
@@ -312,20 +314,5 @@ def denoise_dataset(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model_name", type=str, default="google/gemma-3-1b-it", help="The model to perform the denoising"
-    )
-    parser.add_argument(
-        "--model_type",
-        type=str,
-        default="causal",
-        choices=["causal", "seq2seq"],
-        help="The model type to perform the denoising",
-    )
-    args = parser.parse_args()
-
-    model_name = args.model_name
-    model_type = args.model_type
     do_blocking_hf_login()
-    denoise_dataset(model_name=model_name, model_type=model_type)
+    fire.Fire(denoise_dataset, serialize=lambda _: None)

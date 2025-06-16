@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 import nltk
 from nltk.translate.bleu_score import sentence_bleu
@@ -128,7 +129,7 @@ def evaluate_Bert(noisy_text: str, denoised_text: str, model) -> float:
 
 
 def evaluate_dataset(
-    evaluation_method,
+    evaluation_method: Callable[[str, str], float],
     denoised_data_path: Path,
     noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     cleaned_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json",
