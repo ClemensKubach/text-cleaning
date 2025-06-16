@@ -10,6 +10,7 @@ from text_cleaning.utils import load_data, save_data
 from collections import Counter
 import argparse
 
+''''tokenizer download'''
 nltk.download('punkt_tab')
 
 def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
@@ -24,6 +25,19 @@ def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
         i +=1
     return matched/noisy_len
 
+def evaluate_improvement(clean_text: str, ocr_text: str, denoised_text: str) -> float:
+        return (count_all_operations(clean_text,ocr_text) - count_all_operations(clean_text,denoised_text))/len(clean_text)
+        
+def evaluate_metric_improvement(clean_text: str, ocr_text: str, denoised_text: str, metric) -> float:
+    metric_map = {
+        "CER": evaluate_CER,
+        "WER": evaluate_WER,
+        "BLUE": evaluate_BLUE,
+        "ROGUE": evaluate_ROGUE,
+        "LP": evaluate_letter_precision
+    }
+    evaluation_method = metric_map[metric]
+    
 
 def evaluate_ROGUE( clean_text: str, noisy_text: str) -> float:
     """Just a placeholder for know. Will be called from main.py.

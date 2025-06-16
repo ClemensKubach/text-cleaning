@@ -199,16 +199,14 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
             **inputs,
             max_new_tokens=1500,
             temperature=0.2,  # Lower temperature for more focused corrections
-            top_p=0.95,
+            top_p=0.9,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
         )
         output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
         cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
     elif model_type == "seq2seq":
-        prompt =  f""" denoise the Output of the OCR system:
-        "{chunk.text}"
-        """
+        prompt =  f""" "{chunk.text}"""
         
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         outputs = model.generate(
@@ -217,8 +215,8 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
             top_p=0.95,
             do_sample=True,
         )
-        output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
-        cleaned_chunk =  tokenizer.decode(output_tokens, skip_special_tokens=True)
+        #output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
+        cleaned_chunk =  tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 
         # output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
@@ -235,7 +233,7 @@ def denoise(
     text: str, model_name: str = "google/gemma-3-1b-it",model_type: str="causal", chunk_size: int | None = None, overlap: int = 100
 ) -> str:
     """
-    Denoise OCR text using the choosen model .
+    Denoise OCR text using the chosen model .
 
     Args:
         text: The OCR text to be denoised.
