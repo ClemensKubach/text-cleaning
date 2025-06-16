@@ -1,16 +1,15 @@
 from dataclasses import dataclass
 from pathlib import Path
-from sre_constants import LITERAL
-from tkinter import N
 
 import torch
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM,AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer
 
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import do_blocking_hf_login, load_data, model_name_to_path_compatible, save_data
 import argparse
 from typing import Literal, Union
+
 
 @dataclass
 class TextChunk:
@@ -34,7 +33,7 @@ MODEL_TYPE: str = ""
 
 
 def _load_model(
-    model_name: str = "google/gemma-3-1b-it",model_type: str = "causal"
+    model_name: str = "google/gemma-3-1b-it", model_type: str = "causal"
 ) -> tuple[Union[AutoModelForCausalLM, AutoModelForSeq2SeqLM], AutoTokenizer, Literal["causal", "seq2seq"]]:
     """Load the small LLM and tokenizer for denoising if not already loaded.
 
@@ -46,7 +45,7 @@ def _load_model(
     """
     global DENOISING_MODEL, DENOISING_TOKENIZER, MODEL_TYPE
 
-    if DENOISING_MODEL is None  or model_name not in str(DENOISING_MODEL.config._name_or_path):
+    if DENOISING_MODEL is None or model_name not in str(DENOISING_MODEL.config._name_or_path):
         DENOISING_MODEL = None
         DENOISING_TOKENIZER = None
         MODEL_TYPE = ""
@@ -56,8 +55,8 @@ def _load_model(
                     model_name, torch_dtype=torch.float16, device_map="auto"
                 ).eval()
                 MODEL_TYPE = "causal"
-            except ValueError:
-                raise ValueError(f" wrong model type for the model") from e
+            except ValueError as e:
+                raise ValueError("Wrong model type for the model") from e
         elif model_type == "seq2seq":
             try:
                 DENOISING_MODEL = AutoModelForSeq2SeqLM.from_pretrained(
@@ -66,7 +65,6 @@ def _load_model(
                 MODEL_TYPE = "seq2seq"
             except ValueError as e:
                 raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model") from e
-        
 
         DENOISING_TOKENIZER = AutoTokenizer.from_pretrained(model_name)
         if MODEL_TYPE == "causal":
@@ -167,7 +165,9 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
     return " ".join(result)
 
 
-def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: AutoTokenizer,model_type:Literal["causal,seq2seq"]) -> TextChunk:
+def _denoise_chunk(
+    chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, model_type: Literal["causal,seq2seq"]
+) -> TextChunk:
     """Denoise a single chunk of text.
 
     Args:
@@ -203,13 +203,13 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
         )
-        output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
+        output_tokens = outputs[0][len(inputs.input_ids[0]) :]
         cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
     elif model_type == "seq2seq":
-        prompt =  f""" denoise the Output of the OCR system:
+        prompt = f""" denoise the Output of the OCR system:
         "{chunk.text}"
         """
-        
+
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         outputs = model.generate(
             **inputs,
@@ -217,22 +217,25 @@ def _denoise_chunk(chunk: TextChunk, model: AutoModelForCausalLM, tokenizer: Aut
             top_p=0.95,
             do_sample=True,
         )
-        output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
-        cleaned_chunk =  tokenizer.decode(output_tokens, skip_special_tokens=True)
-
+        output_tokens = outputs[0][len(inputs.input_ids[0]) :]
+        cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True)
 
         # output_tokens = outputs[0][len(inputs.input_ids[0]) : ]
         # cleaned_chunk = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
 
     # Decode and extract the cleaned text
-    
-    print('cleaned text \n')
+
+    print("cleaned text \n")
     print(cleaned_chunk)
     return TextChunk(cleaned_chunk, chunk.start, chunk.end)
 
 
 def denoise(
-    text: str, model_name: str = "google/gemma-3-1b-it",model_type: str="causal", chunk_size: int | None = None, overlap: int = 100
+    text: str,
+    model_name: str = "google/gemma-3-1b-it",
+    model_type: str = "causal",
+    chunk_size: int | None = None,
+    overlap: int = 100,
 ) -> str:
     """
     Denoise OCR text using the choosen model .
@@ -246,7 +249,7 @@ def denoise(
     Returns:
         The denoised text.
     """
-    model, tokenizer,model_type= _load_model(model_name,model_type)
+    model, tokenizer, model_type = _load_model(model_name, model_type)
     if chunk_size is not None:
         text_chunks = _split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
     else:
@@ -254,8 +257,7 @@ def denoise(
 
     denoised_chunks = []
     for chunk in text_chunks:
-        denoised_chunks.append(_denoise_chunk(chunk, model, tokenizer,model_type))
-        
+        denoised_chunks.append(_denoise_chunk(chunk, model, tokenizer, model_type))
 
     # Merge the denoised chunks, handling overlaps
     return _merge_overlapping_chunks(denoised_chunks)
@@ -287,7 +289,7 @@ def denoise_dataset(
     Returns:
         The denoised text.
     """
-    print(model_name)
+    print(f"Denoising dataset using {model_name} and {model_type} ...")
     noisy_data = load_data(noisy_data_path)
     print(f"Loaded noisy data from {noisy_data_path}")
 
@@ -298,7 +300,9 @@ def denoise_dataset(
     denoised_data: dict[int, str] = {}
     for i in tqdm(noisy_data):
         noisy_text = noisy_data[i]
-        denoised_data[i] = denoise(noisy_text, model_name=model_name,model_type=model_type, chunk_size=chunk_size, overlap=overlap)
+        denoised_data[i] = denoise(
+            noisy_text, model_name=model_name, model_type=model_type, chunk_size=chunk_size, overlap=overlap
+        )
     denoised_file_path = noisy_data_path.with_name(
         f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"
     )
@@ -307,24 +311,21 @@ def denoise_dataset(
     return denoised_data, denoised_file_path
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model_name",
-        type=str,
-        default="google/gemma-3-1b-it",
-        help="The model  to perform the denoising"
+        "--model_name", type=str, default="google/gemma-3-1b-it", help="The model to perform the denoising"
     )
-    parser.add_argument("--model_type",
-                       type=str,
+    parser.add_argument(
+        "--model_type",
+        type=str,
         default="causal",
-        choices=["causal","seq2seq"],
-        help="The model type to perform the denoising" )
+        choices=["causal", "seq2seq"],
+        help="The model type to perform the denoising",
+    )
     args = parser.parse_args()
 
     model_name = args.model_name
     model_type = args.model_type
     do_blocking_hf_login()
-    denoise_dataset(model_name=model_name,model_type=model_type)
-
+    denoise_dataset(model_name=model_name, model_type=model_type)

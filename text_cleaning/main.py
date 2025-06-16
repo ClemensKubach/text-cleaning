@@ -3,7 +3,14 @@ from text_cleaning.denoising.denoising import denoise_dataset
 from text_cleaning.evaluation.evaluation import evaluate_dataset
 from text_cleaning.utils import do_blocking_hf_login
 import argparse
-from typing import Optional
+
+
+def denoise_and_evaluate_dataset(model_name: str) -> None:
+    print(f"Denoising and evaluating dataset using {model_name} ...")
+    _, denoised_data_path = denoise_dataset()  # denoise_dataset(subset=[3])
+    print("Evaluating denoised data...")
+    evaluate_dataset(denoised_data_path=denoised_data_path)
+
 
 def main() -> None:
     print(f"Data directory: {DATA_DIR}")
@@ -26,10 +33,10 @@ if __name__ == "__main__":
         "--model_name",
         type=str,
         required=False,
-        help="Name of the model to use for denoising (e.g., 'bert-base-uncased')"
+        help="Name of the model to use for denoising (e.g., 'bert-base-uncased')",
     )
     args = parser.parse_args()
 
     # Call main with the provided model_name
-    #main(args.model_name)
+    # main(args.model_name)
     main()

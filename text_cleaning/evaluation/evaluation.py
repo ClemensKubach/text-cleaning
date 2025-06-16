@@ -7,10 +7,10 @@ from tqdm import tqdm
 import Levenshtein
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import load_data, save_data
-from collections import Counter
 import argparse
 
-nltk.download('punkt_tab')
+nltk.download("punkt_tab")
+
 
 def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
     i = 0
@@ -20,12 +20,12 @@ def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
     print(noisy_text)
     while i < clean_len and i < noisy_len:
         if clean_text[i] == noisy_text[i]:
-            matched +=1
-        i +=1
-    return matched/noisy_len
+            matched += 1
+        i += 1
+    return matched / noisy_len
 
 
-def evaluate_ROGUE( clean_text: str, noisy_text: str) -> float:
+def evaluate_ROGUE(clean_text: str, noisy_text: str) -> float:
     """Just a placeholder for know. Will be called from main.py.
 
     Args:
@@ -37,18 +37,21 @@ def evaluate_ROGUE( clean_text: str, noisy_text: str) -> float:
         The score.
 
     """
-    scorer = rouge_scorer.RougeScorer(['rouge1'], use_stemmer=True)
-    scores = scorer.score(clean_text,noisy_text)
-    prec = scores['rouge1'].precision
-    rec =scores['rouge1'].recall
-    f1 = scores['rouge1'].fmeasure
-    dict_to_return = {"precision":prec,"recall":rec,"f1":f1}
+    scorer = rouge_scorer.RougeScorer(["rouge1"], use_stemmer=True)
+    scores = scorer.score(clean_text, noisy_text)
+    prec = scores["rouge1"].precision
+    rec = scores["rouge1"].recall
+    f1 = scores["rouge1"].fmeasure
+    dict_to_return = {"precision": prec, "recall": rec, "f1": f1}
     return dict_to_return
+
+
 def evaluate_BLUE(clean_text: str, noisy_text: str) -> float:
     noisy_text = word_tokenize(noisy_text)
     clean_text = word_tokenize(clean_text)
-    blue_score = sentence_bleu(clean_text,noisy_text)
+    blue_score = sentence_bleu(clean_text, noisy_text)
     return blue_score
+
 
 def count_all_operations(clean_text: str, noisy_text: str) -> int:
     i, j = 0, 0
@@ -61,8 +64,8 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
         ocr_word = ocr_words[j]
 
         direct_dist = Levenshtein.distance(gt_word, ocr_word)
-        merge_dist = float('inf')
-        split_dist = float('inf')
+        merge_dist = float("inf")
+        split_dist = float("inf")
 
         if len(gt_word) > len(ocr_word) and j + 1 < len(ocr_words):
             merged_ocr = ocr_word + ocr_words[j + 1]
@@ -74,48 +77,54 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
 
         if direct_dist <= merge_dist and direct_dist <= split_dist:
             current_ops = Levenshtein.editops(gt_word, ocr_word)
-            print(gt_word,ocr_word)
+            print(gt_word, ocr_word)
             print(len(current_ops))
-            print('\n')
+            print("\n")
             ops_count += len(current_ops)
             i += 1
             j += 1
 
         elif merge_dist < split_dist:
             current_ops = Levenshtein.editops(gt_word, merged_ocr)
-            print(gt_word,ocr_word)
+            print(gt_word, ocr_word)
             print(len(current_ops))
-            print('\n')
+            print("\n")
             ops_count += len(current_ops)
             i += 1
             j += 2
 
         else:
             current_ops = Levenshtein.editops(merged_gt, ocr_word)
-            print(gt_word,ocr_word)
+            print(gt_word, ocr_word)
             print(len(current_ops))
-            print('\n')
+            print("\n")
             ops_count += len(current_ops)
             i += 2
             j += 1
-    
+
     ops_count += sum(len(w) for w in gt_words[i:])  # remaining GT tokens, subtraction
-    ops_count += sum(len(w) for w in ocr_words[j:]) # remaining OCR tokens, subtraction
+    ops_count += sum(len(w) for w in ocr_words[j:])  # remaining OCR tokens, subtraction
     return ops_count
 
-def evaluate_CER(clean_text:str,noisy_text:str) -> float:
+
+def evaluate_CER(clean_text: str, noisy_text: str) -> float:
     divisor = len(clean_text)
     print(divisor)
-    return count_all_operations(clean_text,noisy_text)/divisor
+    return count_all_operations(clean_text, noisy_text) / divisor
+
+
 def evaluate_WER(clean_text: str, noisy_text: str) -> float:
     tokens = word_tokenize(clean_text)
     divisor = len(tokens)
-    return count_all_operations(clean_text,noisy_text)/divisor
+    return count_all_operations(clean_text, noisy_text) / divisor
+
+
 def evaluate_perplexity(noisy_text: str, denoised_text: str, model) -> float:
     pass
+
+
 def evaluate_Bert(noisy_text: str, denoised_text: str, model) -> float:
     pass
-
 
 
 def evaluate_dataset(
@@ -160,8 +169,8 @@ if __name__ == "__main__":
         "--metric",
         type=str,
         default="CER",
-        choices=["CER", "WER", "BLUE", "ROGUE","LP"],
-        help="Evaluation metric to use"
+        choices=["CER", "WER", "BLUE", "ROGUE", "LP"],
+        help="Evaluation metric to use",
     )
     args = parser.parse_args()
 
@@ -170,7 +179,7 @@ if __name__ == "__main__":
         "WER": evaluate_WER,
         "BLUE": evaluate_BLUE,
         "ROGUE": evaluate_ROGUE,
-        "LP": evaluate_letter_precision
+        "LP": evaluate_letter_precision,
     }
 
     evaluation_method = metric_map[args.metric]

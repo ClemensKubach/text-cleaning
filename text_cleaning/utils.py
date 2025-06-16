@@ -14,6 +14,7 @@ def setup_wandb():
 
 
 def _read_hf_token() -> str | None:
+    """Read the HF_TOKEN from the userdata or the environment variables."""
     if IN_COLAB:
         try:
             return userdata.get("HF_TOKEN")  # type: ignore # noqa: F821
@@ -24,7 +25,7 @@ def _read_hf_token() -> str | None:
 
 
 def do_blocking_hf_login():
-    # run the login in a separate cell because login is non-blocking
+    """Run the login in a separate cell because login is non-blocking."""
     try:
         token = _read_hf_token()
         login(token=token)
