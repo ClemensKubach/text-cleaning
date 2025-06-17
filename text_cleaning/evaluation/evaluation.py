@@ -1,6 +1,8 @@
+from collections.abc import Callable
 from pathlib import Path
 import tokenize
 import nltk
+import logging
 from nltk.translate.bleu_score import sentence_bleu
 from nltk.tokenize import word_tokenize
 from rouge_score import rouge_scorer
@@ -8,15 +10,19 @@ from tqdm import tqdm
 import Levenshtein
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import load_data, save_data
-from collections import Counter
 import argparse
 from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM, AutoModelForMaskedLM, AutoModelForSeq2SeqLM
 import os
 import torch
 
 
+
 ''''tokenizer download for splitting the text on the words properly'''
-nltk.download('punkt_tab')
+
+logger = logging.getLogger(__name__)
+
+nltk.download("punkt_tab")
+
 
 
 '''global variable MODEL_PATH, holding the path to the model that we would want to evaluate the perplexity on
@@ -79,12 +85,12 @@ def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
     matched = 0
     clean_len = len(clean_text)
     noisy_len = len(noisy_text)
-    print(noisy_text)
+    logger.debug(noisy_text)
     while i < clean_len and i < noisy_len:
         if clean_text[i] == noisy_text[i]:
-            matched +=1
-        i +=1
-    return matched/noisy_len
+            matched += 1
+        i += 1
+    return matched / noisy_len
 
 '''function to evaluate the improvement between two texts in the 
 terms of number of operations in the  edit distance '''
@@ -109,6 +115,7 @@ def evaluate_metric_improvement(clean_text: str, ocr_text: str, denoised_text: s
         except ZeroDivisionError:
             print("no possible evaluation")
 
+
     elif evaluation_method.__name__ in ["evaluate_CER", "evaluate_WER"]:
         try:
             improvement_ratio = evaluation_method(clean_text, ocr_text) / evaluation_method(clean_text,denoised_text)
@@ -131,6 +138,7 @@ def evaluate_ROGUE( clean_text: str, noisy_text: str) -> float:
 
 
 '''auxillry method to count operations needed to match two strings '''
+
 def count_all_operations(clean_text: str, noisy_text: str) -> int:
     i, j = 0, 0
     ops_count = 0
@@ -142,8 +150,8 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
         ocr_word = ocr_words[j]
 
         direct_dist = Levenshtein.distance(gt_word, ocr_word)
-        merge_dist = float('inf')
-        split_dist = float('inf')
+        merge_dist = float("inf")
+        split_dist = float("inf")
 
         if len(gt_word) > len(ocr_word) and j + 1 < len(ocr_words):
             merged_ocr = ocr_word + ocr_words[j + 1]
@@ -155,34 +163,35 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
 
         if direct_dist <= merge_dist and direct_dist <= split_dist:
             current_ops = Levenshtein.editops(gt_word, ocr_word)
-            print(gt_word,ocr_word)
-            print(len(current_ops))
-            print('\n')
+            logger.debug(f"{gt_word} {ocr_word}")
+            logger.debug(f"Operations: {len(current_ops)}")
+            logger.debug("")
             ops_count += len(current_ops)
             i += 1
             j += 1
 
         elif merge_dist < split_dist:
             current_ops = Levenshtein.editops(gt_word, merged_ocr)
-            print(gt_word,ocr_word)
-            print(len(current_ops))
-            print('\n')
+            logger.debug(f"{gt_word} {ocr_word}")
+            logger.debug(f"Operations: {len(current_ops)}")
+            logger.debug("")
             ops_count += len(current_ops)
             i += 1
             j += 2
 
         else:
             current_ops = Levenshtein.editops(merged_gt, ocr_word)
-            print(gt_word,ocr_word)
-            print(len(current_ops))
-            print('\n')
+            logger.debug(f"{gt_word} {ocr_word}")
+            logger.debug(f"Operations: {len(current_ops)}")
+            logger.debug("")
             ops_count += len(current_ops)
             i += 2
             j += 1
-    
+
     ops_count += sum(len(w) for w in gt_words[i:])  # remaining GT tokens, subtraction
-    ops_count += sum(len(w) for w in ocr_words[j:]) # remaining OCR tokens, subtraction
+    ops_count += sum(len(w) for w in ocr_words[j:])  # remaining OCR tokens, subtraction
     return ops_count
+
 
 '''method to evaluate the CER - error rate in terms of the character operation to character number ratio'''
 def evaluate_CER(clean_text:str,noisy_text:str) -> float:
@@ -198,8 +207,9 @@ def evaluate_WER(clean_text: str, noisy_text: str) -> float:
 
 
 '''the main pipeline for evaluating the cleaning chunk by chunk  '''
+
 def evaluate_dataset(
-    evaluation_method,
+    evaluation_method: Callable[[str, str], float],
     denoised_data_path: Path,
     noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     cleaned_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json",
@@ -216,11 +226,11 @@ def evaluate_dataset(
         The scores.
     """
     noisy_data = load_data(noisy_data_path)
-    print(f"Loaded noisy data from {noisy_data_path}")
+    logger.info(f"Loaded noisy data from {noisy_data_path}")
     clean_data = load_data(cleaned_data_path)
-    print(f"Loaded clean data from {cleaned_data_path}")
+    logger.info(f"Loaded clean data from {cleaned_data_path}")
     denoised_data = load_data(denoised_data_path)
-    print(f"Loaded denoised data from {denoised_data_path}")
+    logger.info(f"Loaded denoised data from {denoised_data_path}")
 
     scores: dict[int, float] = {}
     for i in tqdm(denoised_data):
@@ -235,7 +245,7 @@ def evaluate_dataset(
             scores[i] = score
     scores_file_path = denoised_data_path.with_name(f"{noisy_data_path.stem}_scores{noisy_data_path.suffix}")
     save_data(scores_file_path, scores)
-    print(f"Scores saved to {scores_file_path}")
+    logger.info(f"Scores saved to {scores_file_path}")
     return scores, scores_file_path
 
 
@@ -245,8 +255,8 @@ if __name__ == "__main__":
         "--metric",
         type=str,
         default="CER",
-        choices=["CER", "WER", "BLUE", "ROGUE","LP"],
-        help="Evaluation metric to use"
+        choices=["CER", "WER", "BLUE", "ROGUE", "LP"],
+        help="Evaluation metric to use",
     )
     parser.add_argument(
         "--task",
@@ -264,6 +274,7 @@ if __name__ == "__main__":
         "ROGUE": evaluate_ROGUE,
         "LP": evaluate_letter_precision,
         "PERPLEXITY":evaluate_perplexity
+
     }
 
     evaluation_method = metric_map[args.metric]
