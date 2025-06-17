@@ -194,10 +194,7 @@ def denoise(
     overlap: int = DEFAULT_OVERLAP,
 ) -> str:
     """
-
     Denoise OCR text using the chosen model.
->>>>>>> 5932757a59189a48541df8135122f5be9871fc19
-
     Args:
         text: The OCR text to be denoised.
         model_name: The name of the model to use for denoising.
@@ -232,14 +229,12 @@ def denoise_dataset(
 ) -> tuple[dict[int, str], Path]:
     """
     Denoise a dataset of text.
-
     The dataset is expected to be in the format of a JSON file with the following structure:
     {
         "1": "...",
         "2": "...",
         ...
     }
-
     Args:
         noisy_data_path: The path to the noisy dataset.
         model_name: The name of the model to use for denoising.
