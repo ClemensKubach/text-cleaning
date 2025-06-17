@@ -1,0 +1,4 @@
+ the most common character substitution mistakes ocr/gt to gt ratio[(('l', 't'), 'frequent_mistake'), (('v', 'u'), 'frequent_mistake'), (('s', 'f'), 'frequent_mistake'), (('u', 'v'), 'frequent_mistake'), (('r', 'n'), 'frequent_mistake'), (('b', 'h'), 'frequent_mistake'), (('I', '1'), 'most_frequent_mistake')]
+ the most common visual substitution mistakes ocr/gt to gt ratio [[('rn', 'm'), 0.032], [('m', 'rn'), 0.013]]
+ the number of mistakenly added space with respect to all spaces in the ground truth{(' ', ' '): 0.006}
+ the number of mistakenly subtracted spaces with respect to all spaces in the ground truth{(' ', ' '): 0.011}
