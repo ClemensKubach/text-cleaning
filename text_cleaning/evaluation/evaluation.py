@@ -27,6 +27,7 @@ nltk.download("punkt_tab")
 
 '''global variable MODEL_PATH, holding the path to the model that we would want to evaluate the perplexity on
 for now set to the Mistral 7B model'''
+
 MODEL_PATH: str = "mistralai/Mistral-7B-v0.1"
 
 
@@ -109,13 +110,15 @@ def evaluate_metric_improvement(clean_text: str, ocr_text: str, denoised_text: s
     print("name of the evaluation function")
     print(evaluation_method.__name__)
     improvement_ratio = None
+    '''the gain function , i.e the bigger score the better '''
     if evaluation_method.__name__ in ["evaluate_ROGUE", "evaluate_letter_precision"]:
         try:
             improvement_ratio =   evaluation_method(clean_text,denoised_text)/evaluation_method(clean_text, ocr_text)
         except ZeroDivisionError:
             print("no possible evaluation")
 
-
+    
+    
     elif evaluation_method.__name__ in ["evaluate_CER", "evaluate_WER"]:
         try:
             improvement_ratio = evaluation_method(clean_text, ocr_text) / evaluation_method(clean_text,denoised_text)
@@ -241,7 +244,7 @@ def evaluate_dataset(
             score = evaluation_method(clean_text, denoised_text)
             scores[i] = score
         elif evaluation_task == "comparative":
-            score = evaluate_metric_improvement(clean_text,noisy_text,denoised_text,evaluation_method,model_path)
+            score = evaluate_metric_improvement(clean_text,noisy_text,denoised_text,evaluation_method)
             scores[i] = score
     scores_file_path = denoised_data_path.with_name(f"{noisy_data_path.stem}_scores{noisy_data_path.suffix}")
     save_data(scores_file_path, scores)
@@ -265,7 +268,12 @@ if __name__ == "__main__":
         choices=["single","comparative"],
         help="Whether to evaluate denoised output against the clean text, or compare denoised and noisy output "
     )
-
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        required=False,
+        help="path/name of the model to evaluate the perplexity score on"
+    )
     args = parser.parse_args()
 
     metric_map = {
@@ -279,7 +287,7 @@ if __name__ == "__main__":
 
     evaluation_method = metric_map[args.metric]
     evaluation_task = args.task
-    model_path = args.model_path
+    model_path = args.model_path 
    
     if model_path:
        set_global_var(model_path)
