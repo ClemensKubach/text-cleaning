@@ -8,7 +8,9 @@ Text denoising
 
    To denoise the text run   `python -m text_cleaning.denoising.denoising --model_name --model_type`
 
-   To evaluate the denoising run  `python -m text_cleaning.evaluation.evaluation --metric`
+   To evaluate the denoising run with classic metrics  `python -m text_cleaning.evaluation.classic_metric.evaluation --metric`
+   
+   To evaluate the denoising run with the LLM(Gemini) as a judge `python -m text_cleaning.evaluation.gemini_as_judge.judge_run --evaluation_technique  --input_names`
    
 ## Examples
 
@@ -41,7 +43,17 @@ python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B
 # Run BART-base (is not denoising)
 python -m text_cleaning.denoising.denoising --model_name="facebook/bart-base" --model_type="seq2seq"
 ```
+### Evaluation with the classical ocr metrics
 
+```bash
+python -m text_cleaning.evaluation.classic_metrics.evaluation --metric "WER" --task "single"  
+```
+
+### Evaluation with the Gemini as a judge 
+
+```bash
+ python -m text_cleaning.evaluation.gemini_as_judge.judge_run --evaluation_technique "pairwise" --input_names "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json" "the_vampyre_ocr_denoised_facebook-bart-base.json"
+```
 
 ## Development
 A devcontainer is set up for this project.
