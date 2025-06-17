@@ -7,7 +7,7 @@ from text_cleaning.statistical_analysis import error_analysis
 path = './data/'
 file_gt = 'ocr_datasets/eng/the_vampyre_clean.json'
 file_ocr = 'ocr_datasets/eng/the_vampyre_ocr.json'
-file_write = 'statistical_analysis/statistical_mistake_analysis.txt'
+file_write = 'statistical_analysis/statistical_mistake_analysis_verbose.txt'
 
 with open(path+file_gt, 'r') as gt:
      data_gt = json.load(gt)
@@ -47,8 +47,8 @@ space_subtracted_mistakes = {(' ',' '): all_space_subtracted}
 character level mistakes normalized by the count of the occurrence of the ground truth letter '''
 counted_characters = error_analysis.count_all_characters_of_interest(path+file_gt)
 mistakes_normalized_letter = error_analysis.normalize_counts_letter(mistakes,counted_characters)
-mistakes_normalized_letter = error_analysis.cluster_mistakes(mistakes_normalized_letter,num_clusters=3,clusters_to_return=2)
-mistakes_normalized_letter.sort(key=lambda x: -x[1])
+mistakes_normalized_letter = error_analysis.cluster_mistakes(mistakes_normalized_letter,num_clusters=3,clusters_to_return=2,verbose=True)
+#mistakes_normalized_letter.sort(key=lambda x: -x[1])
 
 
 mistakes_normalized_visual = error_analysis.normalize_counts_letter(visual_level_mistakes,counted_characters)
