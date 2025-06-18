@@ -11,10 +11,10 @@ from text_cleaning.utils import load_data, save_data
 import tqdm
 import logging
 
-TEXT_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/evaluation_scores/"
+TEXT_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/"
 CLEAN_TEXT = TEXT_PATH + "the_vampyre_clean.json"
 OCR_TEXT = TEXT_PATH + "the_vampyre_ocr.json"
-SCORES_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/"
+SCORES_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/evaluation_scores/"
 
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,11 @@ def evaluate_dataset(
             scores[i] = evaluation
 
 
-    scores_file_path = SCORES_PATH + f"{evaluation_technique}" +"score.json"
+    str_input_paths = ''
+    for element in input_paths:
+        str_input_paths += element
+
+    scores_file_path = SCORES_PATH + f"{evaluation_technique}" + "_" + f"{str_input_paths}" 
     save_data(scores_file_path, scores)
     logger.info(f"Scores saved to {scores_file_path}")
     return scores, scores_file_path
