@@ -47,11 +47,10 @@ def count_all_characters_of_interest(file_path) -> dict:
 """normalizing the count of errors with respect to all errors"""
 
 
-def normalize_counts(count_dictionaries) -> list[dict]:
+def normalize_counts(dictionary) -> list[dict]:
     s = 0
-    for item in count_dictionaries:
-        s += sum([v for v in item.values()])
-    return [{k: v / s for k, v in dictionary.items()} for dictionary in count_dictionaries]
+    s = sum([v for v in dictionary.values()])
+    return {k: v / s for k, v in dictionary.items()}
 
 
 """normalize the count of errors with respect to the ground-truth letter"""
@@ -91,26 +90,26 @@ def split_dataset(keys) -> list[list, list]:
 """function clustering the mistakes, to asses which are common and which not """
 
 
-def cluster_mistakes(substitutions, num_clusters=2, clusters_to_return=1) -> list[tuple]:
-    counts = np.array(list(substitutions.values())).reshape(-1, 1)
+# def cluster_mistakes(substitutions, num_clusters=2, clusters_to_return=1) -> list[tuple]:
+#     counts = np.array(list(substitutions.values())).reshape(-1, 1)
 
-    kmeans = KMeans(n_clusters=num_clusters, random_state=42).fit(counts)
-    labels = kmeans.labels_
-    # frequent_cluster = np.argmax(kmeans.cluster_centers_)
-    # frequent_mistakes = [(k,substitutions[k]) for k, v in zip(substitutions.keys(), counts) if labels[counts.tolist().index([v])] == frequent_cluster]
-    top_clusters = np.argsort(kmeans.cluster_centers_.flatten())[-clusters_to_return:]
+#     kmeans = KMeans(n_clusters=num_clusters, random_state=42).fit(counts)
+#     labels = kmeans.labels_
+#     # frequent_cluster = np.argmax(kmeans.cluster_centers_)
+#     # frequent_mistakes = [(k,substitutions[k]) for k, v in zip(substitutions.keys(), counts) if labels[counts.tolist().index([v])] == frequent_cluster]
+#     top_clusters = np.argsort(kmeans.cluster_centers_.flatten())[-clusters_to_return:]
 
     
 
-    # Get mistakes belonging to these top clusters
-    frequent_mistakes = [
-        (k, substitutions[k])
-        for k, v, lbl in zip(substitutions.keys(), counts.flatten(), labels)
-        if lbl in top_clusters
-    ]
+#     # Get mistakes belonging to these top clusters
+#     frequent_mistakes = [
+#         (k, substitutions[k])
+#         for k, v, lbl in zip(substitutions.keys(), counts.flatten(), labels)
+#         if lbl in top_clusters
+#     ]
 
-    return frequent_mistakes
-    # return  frequent_mistakes
+#     return frequent_mistakes
+#     # return  frequent_mistakes
 
 
 """Tokenize a sentence into a list of words"""
