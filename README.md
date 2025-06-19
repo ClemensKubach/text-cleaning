@@ -20,8 +20,8 @@ Text denoising
 # Run Llama 3.2-1B with simple in-context learning
 python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --subset="[3,]" --in_context "simple"
 
-# Run Gemma 3-1B with complex in-context learning
-python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it" --subset="[3,]" --in_context "complex"
+# Run Gemma 3-1B with complex in-context learning, majority voting and sentence chunking
+python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it" --subset="[3,]" --in_context "complex" --num_attempts=5 --use_sentence_chunks=True
 
 # Run Minerva 1B without in-context learning (too slow at the moment)
 python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0" --subset="[3,]" --in_context "None"

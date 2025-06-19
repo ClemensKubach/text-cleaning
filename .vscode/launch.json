@@ -19,7 +19,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "text_cleaning.denoising.denoising",
-            "args": ["--model_name=google/gemma-3-1b-it", "--model_type=causal", "--in_context=simple", "--subset=[3,4]"],
+            "args": ["--model_name=google/gemma-3-1b-it", "--model_type=causal", "--in_context=complex", "--subset=[3,4]", "--num_attempts=1"],
             "justMyCode": true,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}${pathSeparator}${text_cleaning}:${env:PYTHONPATH}"

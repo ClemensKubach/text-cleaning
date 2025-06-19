@@ -170,9 +170,9 @@ def load_pipeline(
         device_map="auto",
         return_full_text=False,  # <-- only return the new text
         clean_up_tokenization_spaces=True,
-        do_sample=True,
-        temperature=0.2,
-        top_p=0.95,
+        # do_sample=False,
+        # temperature=0.2,
+        # top_p=0.95,
     )
     return text_pipeline, tokenizer, model_type
 

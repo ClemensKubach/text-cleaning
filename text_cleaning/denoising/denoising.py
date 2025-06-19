@@ -4,6 +4,7 @@ import logging
 import fire
 from tqdm import tqdm
 from transformers import AutoTokenizer, Pipeline
+from collections import Counter
 
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import (
@@ -28,7 +29,7 @@ FILE_WRITE_CHUNK_STATS.mkdir(parents=True, exist_ok=True)
 def get_in_context_messages(input_text: str, in_context: Literal["simple", "complex", "None"]) -> list[dict]:
     instruction_prompt = (
         "Clean and denoise the noisy text you will receive. It is determined from an optical character recognition (OCR) system. "
-        "Denoise the text character by character to existing words. Do not change grammar or meaning of the text. "
+        "Denoise the text word by word or character by character to existing words. Do not change grammar, word order or meaning of the text. "
         "VERY IMPORTANT: Output ONLY the denoised version of the text. "
         "Do NOT output anything else. "
     )
@@ -39,9 +40,7 @@ def get_in_context_messages(input_text: str, in_context: Literal["simple", "comp
             {
                 "role": "system",
                 "content": (
-                    instruction_prompt + "\n" + "You are a helpful assistant that corrects noisy OCR text. "
-                    "Your task is to fix common OCR character substitution errors. "
-                    "The most frequent mistakes found in the data include:\n"
+                    instruction_prompt + "\n" + "The most frequent mistakes found in the data include:\n"
                     "- 't' often misread as 'l'\n"
                     "- 'h' often misread as 'b'\n"
                     "- 'n'often misread as'r'\n"
@@ -145,56 +144,53 @@ class TextChunk:
     end: int
 
 
-def _split_text_with_overlap(text: str, chunk_size: int, overlap: int) -> list[TextChunk]:
-    """Split text into overlapping chunks using a sliding window approach.
-
-    Each chunk includes some context from the previous and next chunks.
+def _split_text_into_sentences(text: str, use_sentence_chunks: bool = True) -> list[TextChunk]:
+    """Split text into chunks by sentences or return as single chunk.
 
     Args:
         text: The text to split.
-        chunk_size: Maximum characters per chunk.
-        overlap: Number of characters to overlap between chunks.
+        use_sentence_chunks: If True, splits at sentence boundaries. If False, returns whole text as one chunk.
 
     Returns:
-        List of TextChunk objects.
+        List of TextChunk objects. Either one per sentence or a single chunk for the whole text.
     """
-    if len(text) <= chunk_size:
+    if not use_sentence_chunks:
         return [TextChunk(text, 0, len(text))]
-    else:
-        logger.info(f"Splitting text of length {len(text)} into chunks of size {chunk_size} with overlap {overlap}")
 
+    # Split by sentences and keep track of positions
+    current_pos = 0
     chunks = []
-    start = 0
 
-    while start < len(text):
-        # Calculate end position for this chunk
-        end = min(start + chunk_size, len(text))
+    # Handle the case where there are no sentence boundaries
+    if ". " not in text:
+        return [TextChunk(text, 0, len(text))]
 
-        # If this is not the last chunk, try to find a good break point
-        if end < len(text):
-            # Look for sentence boundary within overlap region
-            break_point = text.rfind(". ", end - overlap, end)
-            if break_point != -1:
-                end = break_point + 2  # Include the period and space
-            else:
-                # If no sentence boundary, look for space
-                break_point = text.rfind(" ", end - overlap, end)
-                if break_point != -1:
-                    end = break_point + 1
-                else:
-                    # If no good break point, use the middle of overlap
-                    end = (end - overlap) // 2
+    # Split and process each sentence
+    sentences = text.split(". ")
+    for i, sentence in enumerate(sentences):
+        # Add the period back except for the last sentence
+        sentence_full = sentence + "." if i < len(sentences) - 1 else sentence
+        sentence_len = len(sentence_full)
 
-        chunks.append(TextChunk(text[start:end], start, end))
+        chunks.append(TextChunk(sentence_full, current_pos, current_pos + sentence_len))
+        current_pos += sentence_len
 
-        # Move start position, accounting for overlap
-        start = end - overlap if end < len(text) else end
+    logger.info(f"Split text into {len(chunks)} chunks by sentences")
+
+    # Verify no text is lost
+    reconstructed = _merge_chunks(chunks)
+    if len(reconstructed) != len(text):
+        logger.warning(f"Text length mismatch! Original: {len(text)}, Reconstructed: {len(reconstructed)}")
+        return [TextChunk(text, 0, len(text))]
 
     return chunks
 
 
-def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
-    """Merge overlapping chunks back together, handling overlaps intelligently.
+def _merge_chunks(chunks: list[TextChunk]) -> str:
+    """Merge chunks back together.
+
+    Since chunks are individual sentences, we just need to concatenate them
+    in the correct order.
 
     Args:
         chunks: List of TextChunk objects.
@@ -205,39 +201,43 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
     if not chunks:
         return ""
 
-    # Sort chunks by start position
+    # Sort chunks by start position to ensure correct order
     chunks.sort(key=lambda x: x.start)
 
-    result = []
-    current_pos = 0
+    # Simply concatenate the chunks as they're already complete sentences
+    return " ".join(chunk.text for chunk in chunks)
 
-    for chunk in chunks:
-        if chunk.start > current_pos:
-            # There's a gap, add the missing text
-            result.append(chunk.text)
-        else:
-            # There's an overlap, find the best merge point
-            overlap_start = chunk.start
-            overlap_end = min(current_pos, chunk.end)
 
-            # Find the best merge point in the overlap region
-            # Look for sentence boundaries first
-            merge_point = chunk.text.rfind(". ", 0, overlap_end - overlap_start)
-            if merge_point != -1:
-                merge_point += 2  # Include the period and space
-            else:
-                # If no sentence boundary, look for space
-                merge_point = chunk.text.rfind(" ", 0, overlap_end - overlap_start)
-                if merge_point != -1:
-                    merge_point += 1
-                else:
-                    # If no good break point, use the middle of overlap
-                    merge_point = (overlap_end - overlap_start) // 2
-            # Add the non-overlapping part
-            result.append(chunk.text[merge_point:])
+def _get_majority_vote_text(denoised_attempts: list[str]) -> str:
+    """Get the majority vote for each word position across multiple denoising attempts.
 
-        current_pos = chunk.end
-    return " ".join(result)
+    Args:
+        denoised_attempts: List of denoised text versions.
+
+    Returns:
+        Text constructed from the most common word at each position.
+    """
+    # Split each attempt into words
+    word_sequences = [attempt.split() for attempt in denoised_attempts]
+
+    # Find the most common length to handle different lengths
+    lengths = [len(seq) for seq in word_sequences]
+    most_common_length = Counter(lengths).most_common(1)[0][0]
+
+    # Filter sequences to only those with the most common length
+    valid_sequences = [seq for seq in word_sequences if len(seq) == most_common_length]
+    if not valid_sequences:
+        # If no valid sequences (shouldn't happen with at least one attempt), return first attempt
+        return denoised_attempts[0]
+
+    # For each word position, find the most common word
+    result_words = []
+    for pos in range(most_common_length):
+        words_at_pos = [seq[pos] for seq in valid_sequences]
+        most_common_word = Counter(words_at_pos).most_common(1)[0][0]
+        result_words.append(most_common_word)
+
+    return " ".join(result_words)
 
 
 def _denoise_chunk(
@@ -246,52 +246,67 @@ def _denoise_chunk(
     tokenizer: AutoTokenizer,
     model_type: Literal["causal", "seq2seq"],
     in_context: Literal["simple", "complex", "None"] = "None",
+    num_attempts: int = 1,
 ) -> TextChunk:
-    """Denoise a single chunk of text.
+    """Denoise a single chunk of text, optionally with multiple attempts and majority voting.
 
     Args:
         chunk: The chunk of text to denoise.
         text_pipeline: The text generation pipeline to use for denoising.
         tokenizer: The tokenizer to use for denoising.
         model_type: The type of model being used.
+        in_context: The type of in-context learning to use.
+        num_attempts: Number of denoising attempts for majority voting (default=1).
 
     Returns:
-        The denoised chunk.
+        The denoised chunk, if num_attempts=1 returns the direct output,
+        if num_attempts>1 returns the majority vote across attempts.
     """
     is_instruction_model = False
     output_marker = "\n\nDenoised text:"
-    if model_type == "causal":
-        if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
-            is_instruction_model = True
-            messages = get_in_context_messages(chunk.text, in_context)
-            prompt = tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-        else:
-            # for base models, we need a prompt that suggests to continue the text
-            prompt = f"Noisy text: {chunk.text}{output_marker}"
-    elif model_type == "seq2seq":
-        prompt = chunk.text
-    else:
-        raise ValueError(f"Model type {model_type} not supported")
 
-    outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
-    generated_text = outputs[0]["generated_text"].strip()
-    if not is_instruction_model:
-        generated_text = generated_text.split(output_marker)[-1].strip()
-    logger.info(f"Generated text: {generated_text}")
-    return TextChunk(generated_text, chunk.start, chunk.end)
+    denoised_attempts = []
+    for _ in range(num_attempts):
+        if model_type == "causal":
+            if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
+                is_instruction_model = True
+                messages = get_in_context_messages(chunk.text, in_context)
+                prompt = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+            else:
+                # for base models, we need a prompt that suggests to continue the text
+                prompt = f"Noisy text: {chunk.text}{output_marker}"
+        elif model_type == "seq2seq":
+            prompt = chunk.text
+        else:
+            raise ValueError(f"Model type {model_type} not supported")
+
+        outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
+        generated_text = outputs[0]["generated_text"].strip()
+        if not is_instruction_model:
+            generated_text = generated_text.split(output_marker)[-1].strip()
+        denoised_attempts.append(generated_text)
+
+    # If only one attempt, return it directly
+    if num_attempts == 1:
+        final_text = denoised_attempts[0]
+    else:
+        # Otherwise, use majority voting
+        final_text = _get_majority_vote_text(denoised_attempts)
+
+    return TextChunk(final_text, chunk.start, chunk.end)
 
 
 def denoise(
     text: str,
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
-    chunk_size: int | None = None,  # MAX_CONTEXT_TOKENS,
-    overlap: int = DEFAULT_OVERLAP,
     in_context: Literal["simple", "complex", "None"] = "None",
+    use_sentence_chunks: bool = True,
+    num_attempts: int = 1,
 ) -> str:
     """
     Denoise OCR text using the chosen model.
@@ -299,24 +314,24 @@ def denoise(
         text: The OCR text to be denoised.
         model_name: The name of the model to use for denoising.
         model_type: The type of model to use for denoising (causal or seq2seq).
-        chunk_size: The size of the chunks to split the text into.
-        overlap: The overlap between the chunks.
+        in_context: The type of in-context learning to use.
+        use_sentence_chunks: If True, processes text sentence by sentence. If False, processes whole text at once.
+        num_attempts: Number of denoising attempts for majority voting (default=1).
 
     Returns:
         The denoised text.
     """
     text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
-    if chunk_size is not None:
-        text_chunks = _split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
-    else:
-        text_chunks = [TextChunk(text, 0, len(text))]
+    text_chunks = _split_text_into_sentences(text, use_sentence_chunks)
 
     denoised_chunks = []
     for chunk in text_chunks:
-        denoised_chunks.append(_denoise_chunk(chunk, text_pipeline, tokenizer, model_type, in_context))
+        denoised_chunks.append(_denoise_chunk(chunk, text_pipeline, tokenizer, model_type, in_context, num_attempts))
 
-    # Merge the denoised chunks, handling overlaps
-    return _merge_overlapping_chunks(denoised_chunks)
+    # Merge the denoised chunks
+    merged_text = _merge_chunks(denoised_chunks)
+    logger.info(f"Generated text: {merged_text}")
+    return merged_text
 
 
 def denoise_dataset(
@@ -324,8 +339,8 @@ def denoise_dataset(
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
     in_context: Literal["simple", "complex", "None"] = "None",
-    chunk_size: int | None = MAX_CONTEXT_TOKENS,
-    overlap: int = DEFAULT_OVERLAP,
+    use_sentence_chunks: bool = True,
+    num_attempts: int = 1,
     subset: list[int] | None = None,
 ) -> tuple[dict[int, str], Path]:
     """
@@ -340,8 +355,9 @@ def denoise_dataset(
         noisy_data_path: The path to the noisy dataset.
         model_name: The name of the model to use for denoising.
         model_type: The type of the model to use for denoising (causal or seq2seq).
-        chunk_size: The size of the chunks to split the text into.
-        overlap: The overlap between the chunks.
+        in_context: The type of in-context learning to use.
+        use_sentence_chunks: If True, processes text sentence by sentence. If False, processes whole text at once.
+        num_attempts: Number of denoising attempts for majority voting (default=1).
         subset: The subset of the data to denoise.
 
     Returns:
@@ -349,8 +365,6 @@ def denoise_dataset(
         - The denoised data dictionary
         - The path where the denoised data was saved
     """
-    # print(f"in_context:{in_context}")
-    # print(f" subset:{subset}")
     noisy_data = load_data(noisy_data_path)
     logger.info(f"Loaded noisy data from {noisy_data_path}")
 
@@ -365,9 +379,9 @@ def denoise_dataset(
             noisy_text,
             model_name=model_name,
             model_type=model_type,
-            chunk_size=chunk_size,
-            overlap=overlap,
             in_context=in_context,
+            use_sentence_chunks=use_sentence_chunks,
+            num_attempts=num_attempts,
         )
     denoised_file_path = noisy_data_path.with_name(
         f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"
