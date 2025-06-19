@@ -19,7 +19,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "text_cleaning.denoising.denoising",
-            "args": ["--subset=[3,]", "--model_name=sapienzanlp/Minerva-1B-base-v1.0", "--model_type=causal"],
+            "args": ["--model_name=google/gemma-3-1b-it", "--model_type=causal"],
             "justMyCode": true,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}${pathSeparator}${text_cleaning}:${env:PYTHONPATH}"

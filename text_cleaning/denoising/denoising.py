@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import logging
+import re
 
 import fire
 from tqdm import tqdm
@@ -21,6 +22,101 @@ from typing import Literal
 MAX_CONTEXT_TOKENS = 16000
 MAX_NEW_TOKENS = MAX_CONTEXT_TOKENS // 2
 DEFAULT_OVERLAP = 100
+
+
+def get_in_context_messages(input_text: str, in_context: Literal["simple", "complex", "None"]) -> list[dict]:
+    if in_context == "simple":
+        return [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant that corrects noisy OCR text. "
+                    "Your task is to fix common OCR character substitution errors. "
+                    "The most frequent mistakes found in the data include:\n"
+                    "- 't' often misread as 'l'\n"
+                    "- 'h' often misread as 'b'\n"
+                    "- 'n'often misread as'r'\n"
+                    "- 'e' often misread as 'c'\n"
+                    "- 'e' often misread as 'o'\n"
+                    "- deletion of letters and spaces\n"
+                    "- addition of letters and spaces \n"
+                    "- insertion of non alpha-numeric symbols such as: 'ſ' "
+                    "These are common OCR issues—use this knowledge to guide corrections."
+                ),
+            },
+            # Example 1: t → l
+            {
+                "role": "user",
+                "content": "Example mistake: 't' was misread as 'l'\nInput: The lalbes were fulled and lisled correctly.",
+            },
+            {"role": "assistant", "content": "The tables were filled and titled correctly."},
+            # Example 2: h → b
+            {
+                "role": "user",
+                "content": "Example mistake: 'h' was misread as 'b'\nInput: The beavy bag bung from the book.",
+            },
+            {"role": "assistant", "content": "The heavy bag hung from the hook."},
+            # Example 3: n → r
+            {
+                "role": "user",
+                "content": "Example mistake: 'n' was misread as 'r'\nInput: The rurse walked dowr the rarrow hallway.",
+            },
+            {"role": "assistant", "content": "The nurse walked down the narrow hallway."},
+            # Example 4: e → c
+            {
+                "role": "user",
+                "content": "Example mistake: 'e' was misread as 'c'\nInput: The accnomy cxperienced a rcccssion.",
+            },
+            {"role": "assistant", "content": "The economy experienced a recession."},
+            # Example 5: e → o
+            {
+                "role": "user",
+                "content": "Example mistake: 'e' was misread as 'o'\nInput: Tho dog jompod ovor tho fonco and ran around.",
+            },
+            {"role": "assistant", "content": "The dog jumped over the fence and ran around."},
+            # Actual test task
+            {"role": "user", "content": f"{input_text}"},
+        ]
+    elif in_context == "complex":
+        return [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant that corrects noisy OCR text. "
+                    "Your task is to fix OCR errors. The most common issues include character substitutions such as 't' misread as 'l', "
+                    "'h' as 'b', 'e' as 'o', and other similar letter substitutions."
+                    " Other errors include deletion or insertion of characters, deletion or addition of spaces,"
+                    "insertion of non-alphanumeric symbols such as 'ſ', and visual-level confusions such as 'rn' misread as 'm'. "
+                    "Use the examples to guide your correction."
+                ),
+            },
+            # Example 1 — t→l, h→b, o→a
+            {"role": "user", "content": "Input: The bla lelped wi h loca lasks arou d the ne ghborhood."},
+            {"role": "assistant", "content": "The bat helped with local tasks around the neighborhood."},
+            # Example 2 — n→r, e→c, i→j
+            {"role": "user", "content": "Input: The rcjghborhood cxperience was diffcrent for everyorje."},
+            {"role": "assistant", "content": "The neighborhood experience was different for everyone."},
+            # Example 3 — e→o, space→missing, i→l
+            {"role": "user", "content": "Input: Thoquickbrownfoxjumpodovorafoncoinono go."},
+            {"role": "assistant", "content": "The quick brown fox jumped over a fence in one go."},
+            # Example 4 — o→0, u→v, a→c
+            {"role": "user", "content": "Input: The c0mpvtcr scftw4re has 0ver 100 featvrcs."},
+            {"role": "assistant", "content": "The computer software has over 100 features."},
+            # Example 5 — f→s, s→f,'ſ' inserted, space→extra space
+            {
+                "role": "user",
+                "content": "Input: The ſlow fteps of the fcouts  sfilled the foreſt with disturbirmg ſound.",
+            },
+            {
+                "role": "assistant",
+                "content": "The slow steps of the scouts filled the forest with disturbing sound.",
+            },
+            # Your test input goes here
+            {"role": "user", "content": f"Input: {input_text}"},
+        ]
+    else:
+        raise ValueError(f"In-context learning type {in_context} not supported")
+
 
 logger = logging.getLogger(__name__)
 
@@ -135,12 +231,23 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
     return " ".join(result)
 
 
+def extract_denoised_text(generated_text: str) -> str | None:
+    """Extract the denoised text from the generated text.
+    If the denoised text is not found, return None.
+    """
+    match = re.search(r"<denoised>(.*?)</denoised>", generated_text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
 def _denoise_chunk(
     chunk: TextChunk,
     text_pipeline: Pipeline,
     tokenizer: AutoTokenizer,
     model_type: Literal["causal", "seq2seq"],
     in_context: Literal["simple", "complex", "None"] = "None",
+    max_attempts: int = 3,
 ) -> TextChunk:
     """Denoise a single chunk of text.
 
@@ -158,140 +265,54 @@ def _denoise_chunk(
     )
     output_marker = "\n\nDenoised text:"
     if is_instruction_model:
-        if in_context == "simple":
-            message = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a helpful assistant that corrects noisy OCR text. "
-                        "Your task is to fix common OCR character substitution errors. "
-                        "The most frequent mistakes found in the data include:\n"
-                        "- 't' often misread as 'l'\n"
-                        "- 'h' often misread as 'b'\n"
-                        "- 'n'often misread as'r'\n"
-                        "- 'e' often misread as 'c'\n"
-                        "- 'e' often misread as 'o'\n"
-                        "- deletion of letters and spaces\n"
-                        "- addition of letters and spaces \n"
-                        "- insertion of non alpha-numeric symbols such as: 'ſ' "
-                        "These are common OCR issues—use this knowledge to guide corrections."
-                    ),
-                },
-                # Example 1: t → l
-                {
-                    "role": "user",
-                    "content": "Example mistake: 't' was misread as 'l'\nInput: The lalbes were fulled and lisled correctly.",
-                },
-                {"role": "assistant", "content": "The tables were filled and titled correctly."},
-                # Example 2: h → b
-                {
-                    "role": "user",
-                    "content": "Example mistake: 'h' was misread as 'b'\nInput: The beavy bag bung from the book.",
-                },
-                {"role": "assistant", "content": "The heavy bag hung from the hook."},
-                # Example 3: n → r
-                {
-                    "role": "user",
-                    "content": "Example mistake: 'n' was misread as 'r'\nInput: The rurse walked dowr the rarrow hallway.",
-                },
-                {"role": "assistant", "content": "The nurse walked down the narrow hallway."},
-                # Example 4: e → c
-                {
-                    "role": "user",
-                    "content": "Example mistake: 'e' was misread as 'c'\nInput: The accnomy cxperienced a rcccssion.",
-                },
-                {"role": "assistant", "content": "The economy experienced a recession."},
-                # Example 5: e → o
-                {
-                    "role": "user",
-                    "content": "Example mistake: 'e' was misread as 'o'\nInput: Tho dog jompod ovor tho fonco and ran around.",
-                },
-                {"role": "assistant", "content": "The dog jumped over the fence and ran around."},
-                # Actual test task
-                {"role": "user", "content": f"{chunk.text}"},
-            ]
+        if in_context == "simple" or in_context == "complex":
+            message = get_in_context_messages(chunk.text, in_context)
             prompt = tokenizer.apply_chat_template(
                 message,
                 tokenize=False,  # Get the formatted string, not tokenized input
                 add_generation_prompt=True,  # Optional: Adds assistant turn prefix if needed
             )
-        elif in_context == "complex":
-            message = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a helpful assistant that corrects noisy OCR text. "
-                        "Your task is to fix OCR errors. The most common issues include character substitutions such as 't' misread as 'l', "
-                        "'h' as 'b', 'e' as 'o', and other similar letter substitutions."
-                        " Other errors include deletion or insertion of characters, deletion or addition of spaces,"
-                        "insertion of non-alphanumeric symbols such as 'ſ', and visual-level confusions such as 'rn' misread as 'm'. "
-                        "Use the examples to guide your correction."
-                    ),
-                },
-                # Example 1 — t→l, h→b, o→a
-                {"role": "user", "content": "Input: The bla lelped wi h loca lasks arou d the ne ghborhood."},
-                {"role": "assistant", "content": "The bat helped with local tasks around the neighborhood."},
-                # Example 2 — n→r, e→c, i→j
-                {"role": "user", "content": "Input: The rcjghborhood cxperience was diffcrent for everyorje."},
-                {"role": "assistant", "content": "The neighborhood experience was different for everyone."},
-                # Example 3 — e→o, space→missing, i→l
-                {"role": "user", "content": "Input: Thoquickbrownfoxjumpodovorafoncoinono go."},
-                {"role": "assistant", "content": "The quick brown fox jumped over a fence in one go."},
-                # Example 4 — o→0, u→v, a→c
-                {"role": "user", "content": "Input: The c0mpvtcr scftw4re has 0ver 100 featvrcs."},
-                {"role": "assistant", "content": "The computer software has over 100 features."},
-                # Example 5 — f→s, s→f,'ſ' inserted, space→extra space
-                {
-                    "role": "user",
-                    "content": "Input: The ſlow fteps of the fcouts  sfilled the foreſt with disturbirmg ſound.",
-                },
-                {
-                    "role": "assistant",
-                    "content": "The slow steps of the scouts filled the forest with disturbing sound.",
-                },
-                # Your test input goes here
-                {"role": "user", "content": f"Input: {chunk.text}"},
-            ]
-            prompt = tokenizer.apply_chat_template(
-                message,
-                tokenize=False,  # Get the formatted string, not tokenized input
-                add_generation_prompt=True,  # Optional: Adds assistant turn prefix if needed
-            )
-
         else:
             # For instruction-tuned models, use chat template if available
-            instruction_prompt = f"""Clean and denoise the given noisy text received from an optical character recognition (OCR) system. VERY IMPORTANT: Output only the denoised version of the text.
-            NOT OUTPUT anything else then the denoised text!
-
-            Given noisy text that is to be denoised:
-            {chunk.text}
-            """
+            instruction_prompt = (
+                "Clean and denoise the given noisy text received from an optical character recognition (OCR) system. "
+                "VERY IMPORTANT: Output ONLY the denoised version of the text in the format <denoised>{denoised_text}</denoised>. "
+                "Do NOT output anything else. "
+                f"Given noisy text: {chunk.text}"
+            )
             prompt = [{"role": "user", "content": instruction_prompt}]
     elif model_type == "seq2seq":
         prompt = chunk.text
     else:
         prompt = f"Noisy text: {chunk.text}{output_marker}"
 
-    outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
-    generated_text = outputs[0]["generated_text"]
+    for _ in range(max_attempts):
+        outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
+        generated_text = outputs[0]["generated_text"]
 
-    # For base models, we need to clean up the output more carefully
-    if is_instruction_model:
-        # Split the output by the model's turn marker
-        model_turns = generated_text.split("<start_of_turn>model")
-        # Take the last occurrence (most recent model response)
-        last_model_turn = model_turns[-1]
-        # Remove trailing special tokens if needed
-        denoised_chunk_text = last_model_turn.split("<end_of_turn>")[0].strip()
-        print(denoised_chunk_text)
-    else:
-        # Extract text after the last "Output:" marker
-        if output_marker in generated_text:
-            denoised_chunk_text = generated_text.split(output_marker)[-1].strip()
+        # For base models, we need to clean up the output more carefully
+        if is_instruction_model:
+            last_model_response = generated_text[-1]["content"]
+            denoised_chunk_text = extract_denoised_text(last_model_response)
+            # # Split the output by the model's turn marker
+            # model_turns = generated_text.split("<start_of_turn>model")
+            # # Take the last occurrence (most recent model response)
+            # last_model_turn = model_turns[-1]
+            # # Remove trailing special tokens if needed
+            # denoised_chunk_text = last_model_turn.split("<end_of_turn>")[0].strip()
+            # print(denoised_chunk_text)
         else:
-            # Fallback to whole text if marker not found
-            denoised_chunk_text = generated_text.strip()
-    return TextChunk(denoised_chunk_text, chunk.start, chunk.end)
+            # Extract text after the last "Output:" marker
+            if output_marker in generated_text:
+                denoised_chunk_text = generated_text.split(output_marker)[-1].strip()
+            else:
+                # Fallback to whole text if marker not found
+                denoised_chunk_text = generated_text.strip()
+        if denoised_chunk_text is not None:
+            logger.info(f"Denoised chunk: {denoised_chunk_text}")
+            return TextChunk(denoised_chunk_text, chunk.start, chunk.end)
+    logger.warning(f"Failed to denoise chunk {chunk.text} after {max_attempts} attempts. Returning the generated text.")
+    return TextChunk(last_model_response, chunk.start, chunk.end)
 
 
 def denoise(
