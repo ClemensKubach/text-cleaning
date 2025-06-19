@@ -1,14 +1,11 @@
 # To run this code you need to install the following dependencies:
 # pip install google-genai
 
-import base64
 import os
 from google import genai
 from google.genai import types
 import argparse
-from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import load_data, save_data
-import tqdm
 import logging
 
 TEXT_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/"
@@ -19,10 +16,8 @@ SCORES_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/evaluation_score
 
 logger = logging.getLogger(__name__)
 
-def evaluate_dataset(
-    input_paths: list[str],
-    evaluation_technique: str
-) -> dict[int, float]:
+
+def evaluate_dataset(input_paths: list[str], evaluation_technique: str) -> dict[int, float]:
     """Evaluate the denoised data.
 
     Args:
@@ -38,45 +33,40 @@ def evaluate_dataset(
     logger.info(f"Loaded denoised data from {OCR_TEXT}")
     denoised_data = []
     for i in range(len(input_paths)):
-        denoised_data.append(load_data(TEXT_PATH+input_paths[i]))
+        denoised_data.append(load_data(TEXT_PATH + input_paths[i]))
         logger.info(f"Loaded denoised data {i} from {input_paths[i]}")
-    
 
     scores: dict[int, str] = {}
     print(denoised_data)
     for i in denoised_data[0]:
         texts_dict = {}
-        texts_dict['clean_text'] = clean_data[i]
-        texts_dict['ocr_text'] = noisy_data[i]
-        #denoised_texts = [denoised_data[j][i] for j in range(len(denoised_data))]
-        if evaluation_technique  == "explicit":
-            texts_dict['denoised_text'] = denoised_data[0][i]
-            evaluation = generate(evaluation_technique=evaluation_technique,input_texts=texts_dict)
+        texts_dict["clean_text"] = clean_data[i]
+        texts_dict["ocr_text"] = noisy_data[i]
+        # denoised_texts = [denoised_data[j][i] for j in range(len(denoised_data))]
+        if evaluation_technique == "explicit":
+            texts_dict["denoised_text"] = denoised_data[0][i]
+            evaluation = generate(evaluation_technique=evaluation_technique, input_texts=texts_dict)
 
             scores[i] = evaluation
         elif evaluation_technique == "pairwise":
-            texts_dict['denoised_text_1'] = denoised_data[0][i]
-            texts_dict['denoised_text_2'] = denoised_data[1][i]
-            evaluation = generate(evaluation_technique=evaluation_technique,input_texts=texts_dict)
+            texts_dict["denoised_text_1"] = denoised_data[0][i]
+            texts_dict["denoised_text_2"] = denoised_data[1][i]
+            evaluation = generate(evaluation_technique=evaluation_technique, input_texts=texts_dict)
             scores[i] = evaluation
         elif evaluation_technique == "ranking":
             for j in range(len(denoised_data)):
-                texts_dict.update({f'denoised_text_{j+1}':denoised_data[j][i]})
-            evaluation = generate(evaluation_technique=evaluation_technique,input_texts=texts_dict)
+                texts_dict.update({f"denoised_text_{j + 1}": denoised_data[j][i]})
+            evaluation = generate(evaluation_technique=evaluation_technique, input_texts=texts_dict)
             scores[i] = evaluation
 
-
-    str_input_paths = ''
+    str_input_paths = ""
     for element in input_paths:
         str_input_paths += element
 
-    scores_file_path = SCORES_PATH + f"{evaluation_technique}" + "_" + f"{str_input_paths}" 
+    scores_file_path = SCORES_PATH + f"{evaluation_technique}" + "_" + f"{str_input_paths}"
     save_data(scores_file_path, scores)
     logger.info(f"Scores saved to {scores_file_path}")
     return scores, scores_file_path
-
-
-
 
 
 def generate(evaluation_technique: str, input_texts: dict[str]):
@@ -108,7 +98,7 @@ def generate(evaluation_technique: str, input_texts: dict[str]):
         """
 
     elif evaluation_technique == "ranking":
-        keys_to_drop = {'clean_text', 'ocr_text'}
+        keys_to_drop = {"clean_text", "ocr_text"}
         denoised_texts = {k: v for k, v in input_texts.items() if k not in keys_to_drop}
         prompt = f"""Rank the following denoised OCR outputs from **best** to **worst** based on these 5 criteria:
         - Preserve the meaning (Fidelity)
@@ -124,7 +114,7 @@ def generate(evaluation_technique: str, input_texts: dict[str]):
         “Ranking: [2, 1, 3, …]”  
         where numbers correspond to output indices, sorted from best to worst. No extra text."""
     elif evaluation_technique == "pairwise":
-        prompt =  f"""Assess which of the two denoised OCR outputs is better based on these 5 criteria:
+        prompt = f"""Assess which of the two denoised OCR outputs is better based on these 5 criteria:
         - Fidelity (alignment with clean_text)
         - Fluency (grammar & style)
         - Completeness (with respect to OCR_text)
@@ -152,29 +142,26 @@ def generate(evaluation_technique: str, input_texts: dict[str]):
     contents = [
         types.Content(
             role="user",
-            parts=[
-                types.Part.from_text(text= prompt )
-            ],
+            parts=[types.Part.from_text(text=prompt)],
         ),
     ]
     generate_content_config = types.GenerateContentConfig(
-        thinking_config = types.ThinkingConfig(
+        thinking_config=types.ThinkingConfig(
             thinking_budget=-1,
         ),
         response_mime_type="text/plain",
     )
 
-    response_text  = ""
+    response_text = ""
     for chunk in client.models.generate_content_stream(
         model=model,
         contents=contents,
         config=generate_content_config,
     ):
-        
         print(chunk.text, end="")
         response_text += chunk.text
     return response_text
-        
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -182,7 +169,7 @@ if __name__ == "__main__":
         "--evaluation_technique",
         type=str,
         default="explicit",
-        choices=["explicit","pairwise","ranking"],
+        choices=["explicit", "pairwise", "ranking"],
         help="choose  the evaluation method ",
     )
     parser.add_argument(
@@ -190,11 +177,11 @@ if __name__ == "__main__":
         nargs="+",
         type=str,
         required=True,
-        help="the name of the input  files that are to be evaluated. In case of the ranking evaluation" \
-        "[name_1,name_2,....]  in case of pairwise evaluation [name_1,name_2] " \
-         "in case of explicit evaluation [name]"
+        help="the name of the input  files that are to be evaluated. In case of the ranking evaluation"
+        "[name_1,name_2,....]  in case of pairwise evaluation [name_1,name_2] "
+        "in case of explicit evaluation [name]",
     )
     args = parser.parse_args()
     evaluation_technique = args.evaluation_technique
     input_paths = [element for element in args.input_names]
-    evaluate_dataset(input_paths=input_paths,evaluation_technique=evaluation_technique)
+    evaluate_dataset(input_paths=input_paths, evaluation_technique=evaluation_technique)

@@ -1,9 +1,10 @@
 import json
 import os
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Union, Tuple
 import logging
 import sys
+import random
 
 import torch
 from huggingface_hub import login
@@ -150,3 +151,40 @@ def load_pipeline(
         device_map="auto",
     )
     return text_pipeline, tokenizer, model_type
+
+
+def split_dataset(
+    data: dict[int, str], test_ratio: float = 0.2, seed: int = 42
+) -> Tuple[dict[int, str], dict[int, str]]:
+    """
+    Split the dataset into training and test sets.
+
+    Args:
+        data: Dictionary mapping page numbers to text.
+        test_ratio: Ratio of testing set size to total dataset size.
+        seed: Random seed for reproducibility.
+
+    Returns:
+        A tuple containing:
+        - Training set dictionary
+        - Testing set dictionary
+    """
+    # Set random seed for reproducibility
+    random.seed(seed)
+
+    # Get all page numbers and shuffle them
+    page_numbers = list(data.keys())
+    random.shuffle(page_numbers)
+
+    # Calculate split index
+    split_idx = int(len(page_numbers) * (1 - test_ratio))
+
+    # Split into train and testing sets
+    train_pages = page_numbers[:split_idx]
+    test_pages = page_numbers[split_idx:]
+
+    # Create train and testing dictionaries
+    train_data = {page: data[page] for page in train_pages}
+    test_data = {page: data[page] for page in test_pages}
+
+    return train_data, test_data

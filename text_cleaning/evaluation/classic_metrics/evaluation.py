@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from pathlib import Path
-import tokenize
 import nltk
 import logging
 from nltk.tokenize import word_tokenize
@@ -10,76 +9,83 @@ import Levenshtein
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import load_data, save_data
 import argparse
-from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM, AutoModelForMaskedLM, AutoModelForSeq2SeqLM
-import os
+from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 import torch
 
 
-
-''''tokenizer download for splitting the text on the words properly'''
+"""'tokenizer download for splitting the text on the words properly"""
 
 logger = logging.getLogger(__name__)
 
 nltk.download("punkt_tab")
 
 
-
-'''global variable MODEL_PATH, holding the path to the model that we would want to evaluate the perplexity on
-for now set to the Mistral 7B model'''
+"""global variable MODEL_PATH, holding the path to the model that we would want to evaluate the perplexity on
+for now set to the Mistral 7B model"""
 
 MODEL_PATH: str = "mistralai/Mistral-7B-v0.1"
 
 
-'''setting the model path'''
+"""setting the model path"""
+
+
 def set_global_var(model_path):
     global MODEL_PATH
     MODEL_PATH = model_path
 
-'''loading, architecture-agnostically, the model '''
+
+"""loading, architecture-agnostically, the model """
+
+
 def load_model_and_tokenizer() -> [AutoModelForCausalLM, AutoTokenizer]:
     # Load the config to inspect model type
     config = AutoConfig.from_pretrained(MODEL_PATH)
-    
+
     # Load tokenizer (doesn't depend on LM head type)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-    
+
     # Decide on model head based on architecture
     model_type = config.architectures[0] if config.architectures else ""
-    
+
     if "CausalLM" in model_type or "GPT2" in model_type or "RWForCausalLM" in model_type:
         model = AutoModelForCausalLM.from_pretrained(model_path)
     else:
         raise ValueError(f"Unsupported model architecture: {model_type}")
-    
+
     return model, tokenizer
 
+
 """auxillary function to compute the perplexity """
-def compute_perplexity(model, tokenizer, input_text)->float:
+
+
+def compute_perplexity(model, tokenizer, input_text) -> float:
     try:
         # Causal LM expects only input text
         inputs = tokenizer(input_text, return_tensors="pt", truncation=True)
         input_ids = inputs.input_ids.to(model.device)
-        normalization_factor =  input_ids.shape[1]
+        normalization_factor = input_ids.shape[1]
         with torch.no_grad():
             outputs = model(input_ids=input_ids, labels=input_ids)
             loss = outputs.loss
             perplexity = torch.exp(loss)
         return perplexity.item() / normalization_factor
-    except:
-        raise ValueError(f"Unsupported model type:")
-    
+    except Exception as e:
+        raise ValueError(f"Error computing perplexity: {e}")
+
+
 """perplexity evaluation function"""
+
+
 def evaluate_perplexity(noisy_text: str, denoised_text) -> float:
     model, tokenizer = load_model_and_tokenizer()
-    normalized_perplexity = compute_perplexity(model,tokenizer,denoised_text)
+    normalized_perplexity = compute_perplexity(model, tokenizer, denoised_text)
     return normalized_perplexity
 
 
-    
+"""evaluate direct letter matching, simple metric not really suitable due to many possible ocr system deletion or 
+addition of the  letters """
 
 
-'''evaluate direct letter matching, simple metric not really suitable due to many possible ocr system deletion or 
-addition of the  letters '''
 def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
     i = 0
     matched = 0
@@ -92,54 +98,62 @@ def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
         i += 1
     return matched / noisy_len
 
-'''function to evaluate the improvement between two texts in the 
-terms of number of operations in the  edit distance '''
+
+"""function to evaluate the improvement between two texts in the 
+terms of number of operations in the  edit distance """
+
+
 def evaluate_improvement(clean_text: str, ocr_text: str, denoised_text: str) -> float:
-        return (count_all_operations(clean_text,ocr_text) - count_all_operations(clean_text,denoised_text))/len(clean_text)
-        
-'''the evaluation of the improvement between two terms in the of the choosen metric '''
+    return (count_all_operations(clean_text, ocr_text) - count_all_operations(clean_text, denoised_text)) / len(
+        clean_text
+    )
+
+
+"""the evaluation of the improvement between two terms in the of the choosen metric """
+
+
 def evaluate_metric_improvement(clean_text: str, ocr_text: str, denoised_text: str, evaluation_method: str) -> float:
     metric_map = {
         "CER": evaluate_CER,
         "WER": evaluate_WER,
-        #"BLUE": evaluate_BLUE,
+        # "BLUE": evaluate_BLUE,
         "ROGUE": evaluate_ROGUE,
-        "LP": evaluate_letter_precision
+        "LP": evaluate_letter_precision,
     }
     print("name of the evaluation function")
     print(evaluation_method.__name__)
     improvement_ratio = None
-    '''the gain function , i.e the bigger score the better '''
+    """the gain function , i.e the bigger score the better """
     if evaluation_method.__name__ in ["evaluate_ROGUE", "evaluate_letter_precision"]:
         try:
-            improvement_ratio =   evaluation_method(clean_text,denoised_text)/evaluation_method(clean_text, ocr_text)
+            improvement_ratio = evaluation_method(clean_text, denoised_text) / evaluation_method(clean_text, ocr_text)
         except ZeroDivisionError:
             print("no possible evaluation")
 
-    
-    
     elif evaluation_method.__name__ in ["evaluate_CER", "evaluate_WER"]:
         try:
-            improvement_ratio = evaluation_method(clean_text, ocr_text) / evaluation_method(clean_text,denoised_text)
+            improvement_ratio = evaluation_method(clean_text, ocr_text) / evaluation_method(clean_text, denoised_text)
         except ZeroDivisionError:
             print("no possible evaluation")
 
     return improvement_ratio
 
-''''evaluating the precision, recall and f1 score between the ground_truth and predicted_text'''
-def evaluate_ROGUE( clean_text: str, noisy_text: str) -> float:
-    
-    scorer = rouge_scorer.RougeScorer(['rouge1'], use_stemmer=True)
-    scores = scorer.score(clean_text,noisy_text)
-    prec = scores['rouge1'].precision
-    rec =scores['rouge1'].recall
-    f1 = scores['rouge1'].fmeasure
-    dict_to_return = {"precision":prec,"recall":rec,"f1":f1}
+
+"""'evaluating the precision, recall and f1 score between the ground_truth and predicted_text"""
+
+
+def evaluate_ROGUE(clean_text: str, noisy_text: str) -> float:
+    scorer = rouge_scorer.RougeScorer(["rouge1"], use_stemmer=True)
+    scores = scorer.score(clean_text, noisy_text)
+    prec = scores["rouge1"].precision
+    rec = scores["rouge1"].recall
+    f1 = scores["rouge1"].fmeasure
+    dict_to_return = {"precision": prec, "recall": rec, "f1": f1}
     return dict_to_return
 
 
+"""auxillry method to count operations needed to match two strings """
 
-'''auxillry method to count operations needed to match two strings '''
 
 def count_all_operations(clean_text: str, noisy_text: str) -> int:
     i, j = 0, 0
@@ -195,28 +209,37 @@ def count_all_operations(clean_text: str, noisy_text: str) -> int:
     return ops_count
 
 
-'''method to evaluate the CER - error rate in terms of the character operation to character number ratio'''
-def evaluate_CER(clean_text:str,noisy_text:str) -> float:
+"""method to evaluate the CER - error rate in terms of the character operation to character number ratio"""
+
+
+def evaluate_CER(clean_text: str, noisy_text: str) -> float:
     divisor = len(clean_text)
     print(divisor)
-    return count_all_operations(clean_text,noisy_text)/divisor
-'''method to evaluate the WER - error rate in terms of the character operation to words number ratio'''
+    return count_all_operations(clean_text, noisy_text) / divisor
+
+
+"""method to evaluate the WER - error rate in terms of the character operation to words number ratio"""
+
+
 def evaluate_WER(clean_text: str, noisy_text: str) -> float:
     tokens = word_tokenize(clean_text)
     divisor = len(tokens)
-    return count_all_operations(clean_text,noisy_text)/divisor
-'''perplexity will be evaluated, empty for now'''
+    return count_all_operations(clean_text, noisy_text) / divisor
 
 
-'''the main pipeline for evaluating the cleaning chunk by chunk  '''
+"""perplexity will be evaluated, empty for now"""
+
+
+"""the main pipeline for evaluating the cleaning chunk by chunk  """
+
 
 def evaluate_dataset(
     evaluation_method: Callable[[str, str], float],
     denoised_data_path: Path,
     noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     cleaned_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json",
-    evaluation_task: str = 'single',
-    model_path: str = None
+    evaluation_task: str = "single",
+    model_path: str = None,
 ) -> dict[int, float]:
     """Evaluate the denoised data.
 
@@ -239,11 +262,11 @@ def evaluate_dataset(
         noisy_text = noisy_data[i]
         clean_text = clean_data[i]
         denoised_text = denoised_data[i]
-        if evaluation_task  == "single":
+        if evaluation_task == "single":
             score = evaluation_method(clean_text, denoised_text)
             scores[i] = score
         elif evaluation_task == "comparative":
-            score = evaluate_metric_improvement(clean_text,noisy_text,denoised_text,evaluation_method)
+            score = evaluate_metric_improvement(clean_text, noisy_text, denoised_text, evaluation_method)
             scores[i] = score
     scores_file_path = denoised_data_path.with_name(f"{noisy_data_path.stem}_scores{noisy_data_path.suffix}")
     save_data(scores_file_path, scores)
@@ -264,14 +287,11 @@ if __name__ == "__main__":
         "--task",
         type=str,
         default="single",
-        choices=["single","comparative"],
-        help="Whether to evaluate denoised output against the clean text, or compare denoised and noisy output "
+        choices=["single", "comparative"],
+        help="Whether to evaluate denoised output against the clean text, or compare denoised and noisy output ",
     )
     parser.add_argument(
-        "--model_path",
-        type=str,
-        required=False,
-        help="path/name of the model to evaluate the perplexity score on"
+        "--model_path", type=str, required=False, help="path/name of the model to evaluate the perplexity score on"
     )
     args = parser.parse_args()
 
@@ -280,16 +300,17 @@ if __name__ == "__main__":
         "WER": evaluate_WER,
         "ROGUE": evaluate_ROGUE,
         "LP": evaluate_letter_precision,
-        "PERPLEXITY":evaluate_perplexity
-
+        "PERPLEXITY": evaluate_perplexity,
     }
 
     evaluation_method = metric_map[args.metric]
     evaluation_task = args.task
-    model_path = args.model_path 
-   
+    model_path = args.model_path
+
     if model_path:
-       set_global_var(model_path)
+        set_global_var(model_path)
 
     denoised_data_path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json"
-    evaluate_dataset(evaluation_method=evaluation_method, denoised_data_path=denoised_data_path,evaluation_task=evaluation_task)
+    evaluate_dataset(
+        evaluation_method=evaluation_method, denoised_data_path=denoised_data_path, evaluation_task=evaluation_task
+    )
