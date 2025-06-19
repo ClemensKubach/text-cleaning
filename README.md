@@ -61,3 +61,31 @@ A devcontainer is set up for this project.
 Open the project in your IDE using devcontainer and extensions, ruff and everything required for development is automatically installed.
 
 Instead of `pip install`, use `uv add` (already installed) to install necessary dependencies.
+
+
+### Fine-tuning with LLaMA-Factory
+First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required once):
+```bash
+python -m text_cleaning.denoising.fine_tuning --generate_files True
+```
+
+
+Now, download LLaMA-Factory:
+```bash
+git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
+cd LLaMA-Factory
+```
+
+We use uv to install LLaMA-Factory with python 3.9.
+```bash
+uv python pin 3.9
+uv sync --extra torch --extra metrics --prerelease=allow
+```
+
+Execute the training:
+```bash
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-gemma-the_vampyre-config.json
+```
+
+Export the model:
+!llamafactory-cli export ../data/fine.json

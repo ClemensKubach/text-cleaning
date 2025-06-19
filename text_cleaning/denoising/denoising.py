@@ -143,7 +143,7 @@ def _denoise_chunk(
     text_pipeline: Pipeline,
     tokenizer: AutoTokenizer,
     model_type: Literal["causal", "seq2seq"],
-    in_context: Literal["simple","complex","None"] = "None"
+    in_context: Literal["simple", "complex", "None"] = "None",
 ) -> TextChunk:
     """Denoise a single chunk of text.
 
@@ -178,68 +178,45 @@ def _denoise_chunk(
                         "- addition of letters and spaces \n"
                         "- insertion of non alpha-numeric symbols such as: 'ſ' "
                         "These are common OCR issues—use this knowledge to guide corrections."
-                    )
+                    ),
                 },
-
                 # Example 1: t → l
                 {
                     "role": "user",
-                    "content": "Example mistake: 't' was misread as 'l'\nInput: The lalbes were fulled and lisled correctly."
+                    "content": "Example mistake: 't' was misread as 'l'\nInput: The lalbes were fulled and lisled correctly.",
                 },
-                {
-                    "role": "assistant",
-                    "content": "The tables were filled and titled correctly."
-                },
-
+                {"role": "assistant", "content": "The tables were filled and titled correctly."},
                 # Example 2: h → b
                 {
                     "role": "user",
-                    "content": "Example mistake: 'h' was misread as 'b'\nInput: The beavy bag bung from the book."
+                    "content": "Example mistake: 'h' was misread as 'b'\nInput: The beavy bag bung from the book.",
                 },
-                {
-                    "role": "assistant",
-                    "content": "The heavy bag hung from the hook."
-                },
-
+                {"role": "assistant", "content": "The heavy bag hung from the hook."},
                 # Example 3: n → r
                 {
                     "role": "user",
-                    "content": "Example mistake: 'n' was misread as 'r'\nInput: The rurse walked dowr the rarrow hallway."
+                    "content": "Example mistake: 'n' was misread as 'r'\nInput: The rurse walked dowr the rarrow hallway.",
                 },
-                {
-                    "role": "assistant",
-                    "content": "The nurse walked down the narrow hallway."
-                },
-
+                {"role": "assistant", "content": "The nurse walked down the narrow hallway."},
                 # Example 4: e → c
                 {
                     "role": "user",
-                    "content": "Example mistake: 'e' was misread as 'c'\nInput: The accnomy cxperienced a rcccssion."
+                    "content": "Example mistake: 'e' was misread as 'c'\nInput: The accnomy cxperienced a rcccssion.",
                 },
-                {
-                    "role": "assistant",
-                    "content": "The economy experienced a recession."
-                },
-
+                {"role": "assistant", "content": "The economy experienced a recession."},
                 # Example 5: e → o
                 {
                     "role": "user",
-                    "content": "Example mistake: 'e' was misread as 'o'\nInput: Tho dog jompod ovor tho fonco and ran around."
+                    "content": "Example mistake: 'e' was misread as 'o'\nInput: Tho dog jompod ovor tho fonco and ran around.",
                 },
-                {
-                    "role": "assistant",
-                    "content": "The dog jumped over the fence and ran around."
-                },
-
+                {"role": "assistant", "content": "The dog jumped over the fence and ran around."},
                 # Actual test task
-                {
-                    "role": "user",
-                    "content": f"{chunk.text}"
-                }]
+                {"role": "user", "content": f"{chunk.text}"},
+            ]
             prompt = tokenizer.apply_chat_template(
-                message, 
+                message,
                 tokenize=False,  # Get the formatted string, not tokenized input
-                add_generation_prompt=True  # Optional: Adds assistant turn prefix if needed
+                add_generation_prompt=True,  # Optional: Adds assistant turn prefix if needed
             )
         elif in_context == "complex":
             message = [
@@ -252,74 +229,39 @@ def _denoise_chunk(
                         " Other errors include deletion or insertion of characters, deletion or addition of spaces,"
                         "insertion of non-alphanumeric symbols such as 'ſ', and visual-level confusions such as 'rn' misread as 'm'. "
                         "Use the examples to guide your correction."
-                    )
+                    ),
                 },
-
                 # Example 1 — t→l, h→b, o→a
-                {
-                    "role": "user",
-                    "content": "Input: The bla lelped wi h loca lasks arou d the ne ghborhood."
-                },
-                {
-                    "role": "assistant",
-                    "content": "The bat helped with local tasks around the neighborhood."
-                },
-
+                {"role": "user", "content": "Input: The bla lelped wi h loca lasks arou d the ne ghborhood."},
+                {"role": "assistant", "content": "The bat helped with local tasks around the neighborhood."},
                 # Example 2 — n→r, e→c, i→j
-                {
-                    "role": "user",
-                    "content": "Input: The rcjghborhood cxperience was diffcrent for everyorje."
-                },
-                {
-                    "role": "assistant",
-                    "content": "The neighborhood experience was different for everyone."
-                },
-
+                {"role": "user", "content": "Input: The rcjghborhood cxperience was diffcrent for everyorje."},
+                {"role": "assistant", "content": "The neighborhood experience was different for everyone."},
                 # Example 3 — e→o, space→missing, i→l
-                {
-                    "role": "user",
-                    "content": "Input: Thoquickbrownfoxjumpodovorafoncoinono go."
-                },
-                {
-                    "role": "assistant",
-                    "content": "The quick brown fox jumped over a fence in one go."
-                },
-
+                {"role": "user", "content": "Input: Thoquickbrownfoxjumpodovorafoncoinono go."},
+                {"role": "assistant", "content": "The quick brown fox jumped over a fence in one go."},
                 # Example 4 — o→0, u→v, a→c
+                {"role": "user", "content": "Input: The c0mpvtcr scftw4re has 0ver 100 featvrcs."},
+                {"role": "assistant", "content": "The computer software has over 100 features."},
+                # Example 5 — f→s, s→f,'ſ' inserted, space→extra space
                 {
                     "role": "user",
-                    "content": "Input: The c0mpvtcr scftw4re has 0ver 100 featvrcs."
+                    "content": "Input: The ſlow fteps of the fcouts  sfilled the foreſt with disturbirmg ſound.",
                 },
                 {
                     "role": "assistant",
-                    "content": "The computer software has over 100 features."
+                    "content": "The slow steps of the scouts filled the forest with disturbing sound.",
                 },
-
-                # Example 5 — f→s, s→f,'ſ' inserted, space→extra space 
-                {
-                    "role": "user",
-                    "content": "Input: The ſlow fteps of the fcouts  sfilled the foreſt with disturbirmg ſound."
-                },
-                {
-                    "role": "assistant",
-                    "content": "The slow steps of the scouts filled the forest with disturbing sound."
-                },
-
                 # Your test input goes here
-                {
-                    "role": "user",
-                    "content": f"Input: {chunk.text}"
-                }
+                {"role": "user", "content": f"Input: {chunk.text}"},
             ]
             prompt = tokenizer.apply_chat_template(
-            message, 
-            tokenize=False,  # Get the formatted string, not tokenized input
-            add_generation_prompt=True  # Optional: Adds assistant turn prefix if needed
-        )
-
+                message,
+                tokenize=False,  # Get the formatted string, not tokenized input
+                add_generation_prompt=True,  # Optional: Adds assistant turn prefix if needed
+            )
 
         else:
-        
             # For instruction-tuned models, use chat template if available
             instruction_prompt = f"""Clean and denoise the given noisy text received from an optical character recognition (OCR) system. VERY IMPORTANT: Output only the denoised version of the text.
             NOT OUTPUT anything else then the denoised text!
@@ -332,19 +274,19 @@ def _denoise_chunk(
         prompt = chunk.text
     else:
         prompt = f"Noisy text: {chunk.text}{output_marker}"
-    
+
     outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
     generated_text = outputs[0]["generated_text"]
-
 
     # For base models, we need to clean up the output more carefully
 
     if in_context == "simple" or in_context == "complex":
         # Split the output by the model's turn marker
-        model_turns = generated_text.split("<start_of_turn>model")  
-        # Take the last occurrence (most recent model
-        #  response)
-        last_model_turn = model_turns[-1]  
+
+        model_turns = generated_text.split("<start_of_turn>model")
+        # Take the last occurrence (most recent model response)
+        last_model_turn = model_turns[-1]
+
         # Remove trailing special tokens if needed
         denoised_chunk_text = last_model_turn.split("<end_of_turn>")[0].strip()
     
@@ -368,7 +310,7 @@ def denoise(
     model_type: Literal["causal", "seq2seq"] = "causal",
     chunk_size: int | None = MAX_CONTEXT_TOKENS,
     overlap: int = DEFAULT_OVERLAP,
-    in_context: Literal["simple","complex","None"] = "None"
+    in_context: Literal["simple", "complex", "None"] = "None",
 ) -> str:
     """
     Denoise OCR text using the chosen model.
@@ -391,8 +333,9 @@ def denoise(
 
     denoised_chunks = []
     for chunk in text_chunks:
-        text_lengths.append(chunk.end-chunk.start)
-        denoised_chunks.append(_denoise_chunk(chunk, text_pipeline, tokenizer, model_type,in_context))
+
+        denoised_chunks.append(_denoise_chunk(chunk, text_pipeline, tokenizer, model_type, in_context))
+
 
     # Merge the denoised chunks, handling overlaps
     return _merge_overlapping_chunks(denoised_chunks)
@@ -402,7 +345,7 @@ def denoise_dataset(
     noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
-    in_context: Literal["simple","complex","None"] = "None",
+    in_context: Literal["simple", "complex", "None"] = "None",
     chunk_size: int | None = MAX_CONTEXT_TOKENS,
     overlap: int = DEFAULT_OVERLAP,
     subset: list[int] | None = None,
@@ -441,7 +384,12 @@ def denoise_dataset(
     for i in tqdm(noisy_data):
         noisy_text = noisy_data[i]
         denoised_data[i] = denoise(
-            noisy_text, model_name=model_name, model_type=model_type, chunk_size=chunk_size, overlap=overlap,in_context=in_context
+            noisy_text,
+            model_name=model_name,
+            model_type=model_type,
+            chunk_size=chunk_size,
+            overlap=overlap,
+            in_context=in_context,
         )
     denoised_file_path = noisy_data_path.with_name(
         f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"

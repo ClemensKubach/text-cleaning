@@ -195,3 +195,4 @@ cython_debug/
 
 # custom ignores
 **/.DS_Store
+LLaMA-Factory
