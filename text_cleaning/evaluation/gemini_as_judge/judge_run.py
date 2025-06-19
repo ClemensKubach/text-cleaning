@@ -121,7 +121,7 @@ def generate(evaluation_technique: str, input_texts: dict[str]):
         ocr_text: {input_texts["ocr_text"]}
         denoised_texts: {denoised_texts}
         Respond with a single line:  
-        “Ranking: [2, 1, 3, …]”  
+        “Ranking: [5,4,2, …]”  
         where numbers correspond to output indices, sorted from best to worst. No extra text."""
     elif evaluation_technique == "pairwise":
         prompt =  f"""Assess which of the two denoised OCR outputs is better based on these 5 criteria:
