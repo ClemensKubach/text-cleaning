@@ -38,4 +38,4 @@ export HF_TOKEN=$(python -c "import huggingface_hub; print(huggingface_hub.HfFol
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-gemma-the_vampyre-config.json
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
