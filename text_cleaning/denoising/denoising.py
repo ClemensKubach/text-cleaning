@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import logging
 import re
-
+import math
 import fire
 from tqdm import tqdm
 from transformers import AutoTokenizer, Pipeline
@@ -19,9 +19,13 @@ from text_cleaning.utils import (
 from typing import Literal
 
 
+text_lengths = []
 MAX_CONTEXT_TOKENS = 16000
 MAX_NEW_TOKENS = MAX_CONTEXT_TOKENS // 2
 DEFAULT_OVERLAP = 100
+
+FILE_WRITE_CHUNK_STATS = DATA_DIR / "statistical_analysis" / "chunk_stats"
+FILE_WRITE_CHUNK_STATS.mkdir(parents=True, exist_ok=True)
 
 
 def get_in_context_messages(input_text: str, in_context: Literal["simple", "complex", "None"]) -> list[dict]:
@@ -291,16 +295,22 @@ def _denoise_chunk(
         generated_text = outputs[0]["generated_text"]
 
         # For base models, we need to clean up the output more carefully
-        if is_instruction_model:
+
+        if in_context == "simple" or in_context == "complex":
             last_model_response = generated_text[-1]["content"]
             denoised_chunk_text = extract_denoised_text(last_model_response)
             # # Split the output by the model's turn marker
+
             # model_turns = generated_text.split("<start_of_turn>model")
             # # Take the last occurrence (most recent model response)
             # last_model_turn = model_turns[-1]
+
             # # Remove trailing special tokens if needed
             # denoised_chunk_text = last_model_turn.split("<end_of_turn>")[0].strip()
-            # print(denoised_chunk_text)
+    
+    elif model_type == "causal":
+            # denoised_chunk_text = generated_text[-1]["content"].strip()
+
         else:
             # Extract text after the last "Output:" marker
             if output_marker in generated_text:
@@ -308,6 +318,7 @@ def _denoise_chunk(
             else:
                 # Fallback to whole text if marker not found
                 denoised_chunk_text = generated_text.strip()
+    
         if denoised_chunk_text is not None:
             logger.info(f"Denoised chunk: {denoised_chunk_text}")
             return TextChunk(denoised_chunk_text, chunk.start, chunk.end)
@@ -335,6 +346,7 @@ def denoise(
     Returns:
         The denoised text.
     """
+    global text_lengths
     text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
     if chunk_size is not None:
         text_chunks = _split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
@@ -379,6 +391,8 @@ def denoise_dataset(
         - The denoised data dictionary
         - The path where the denoised data was saved
     """
+    # print(f"in_context:{in_context}")
+    # print(f" subset:{subset}")
     noisy_data = load_data(noisy_data_path)
     logger.info(f"Loaded noisy data from {noisy_data_path}")
 

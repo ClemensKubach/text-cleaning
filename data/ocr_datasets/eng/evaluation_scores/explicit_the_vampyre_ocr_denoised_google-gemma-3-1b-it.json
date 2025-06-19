@@ -1,0 +1,3 @@
+{
+    "3": "```json\n{\n  \"fidelity\": 4,\n  \"fluency\": 6,\n  \"completeness\": 4,\n  \"no_hallucinations\": 3,\n  \"OCR-improvement\": 5,\n  \"final_score\": 4.4\n}\n```"
+}
