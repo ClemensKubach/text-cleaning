@@ -9,7 +9,14 @@ import random
 import torch
 from huggingface_hub import login
 from huggingface_hub.errors import HfHubHTTPError
-from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, pipeline, Pipeline
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    pipeline,
+    Pipeline,
+    BitsAndBytesConfig,
+)
 
 from text_cleaning.constants import DATA_DIR, IN_COLAB, WANDB_DIR
 
@@ -88,7 +95,9 @@ def model_name_to_path_compatible(model_name: str) -> str:
 
 
 def load_model(
-    model_name: str = "google/gemma-3-1b-it", model_type: Literal["causal", "seq2seq"] = "causal"
+    model_name: str = "google/gemma-3-1b-it",
+    model_type: Literal["causal", "seq2seq"] = "causal",
+    use_4bit: bool = False,
 ) -> tuple[Union[AutoModelForCausalLM, AutoModelForSeq2SeqLM], AutoTokenizer, Literal["causal", "seq2seq"]]:
     """Load the small LLM and tokenizer for denoising.
 
@@ -105,9 +114,19 @@ def load_model(
     model = None
     if model_type == "causal":
         try:
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name, torch_dtype=torch.float16, device_map="auto"
-            ).eval()
+            if use_4bit:
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    quantization_config=BitsAndBytesConfig(load_in_4bit=True),
+                    device_map="auto",  # automatically place on GPU
+                    torch_dtype="auto",  # pick FP16 on GPU if available
+                ).eval()
+            else:
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    device_map="auto",  # automatically place on GPU
+                    torch_dtype="auto",  # pick FP16 on GPU if available
+                ).eval()
         except ValueError:
             raise ValueError(f"Wrong model type {model_type} for the model {model_name}")
     elif model_type == "seq2seq":
@@ -118,7 +137,7 @@ def load_model(
         except ValueError:
             raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     if model_type == "causal":
         tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer, model_type
@@ -149,6 +168,11 @@ def load_pipeline(
         tokenizer=tokenizer,
         torch_dtype=torch.float16,
         device_map="auto",
+        return_full_text=False,  # <-- only return the new text
+        clean_up_tokenization_spaces=True,
+        do_sample=True,
+        temperature=0.2,
+        top_p=0.95,
     )
     return text_pipeline, tokenizer, model_type
 

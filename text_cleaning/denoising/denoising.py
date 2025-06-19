@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
 import logging
-import re
-import math
 import fire
 from tqdm import tqdm
 from transformers import AutoTokenizer, Pipeline
@@ -19,7 +17,6 @@ from text_cleaning.utils import (
 from typing import Literal
 
 
-text_lengths = []
 MAX_CONTEXT_TOKENS = 16000
 MAX_NEW_TOKENS = MAX_CONTEXT_TOKENS // 2
 DEFAULT_OVERLAP = 100
@@ -29,12 +26,20 @@ FILE_WRITE_CHUNK_STATS.mkdir(parents=True, exist_ok=True)
 
 
 def get_in_context_messages(input_text: str, in_context: Literal["simple", "complex", "None"]) -> list[dict]:
-    if in_context == "simple":
+    instruction_prompt = (
+        "Clean and denoise the noisy text you will receive. It is determined from an optical character recognition (OCR) system. "
+        "Denoise the text character by character to existing words. Do not change grammar or meaning of the text. "
+        "VERY IMPORTANT: Output ONLY the denoised version of the text. "
+        "Do NOT output anything else. "
+    )
+    if in_context == "None":
+        return [{"role": "system", "content": instruction_prompt}, {"role": "user", "content": input_text}]
+    elif in_context == "simple":
         return [
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant that corrects noisy OCR text. "
+                    instruction_prompt + "\n" + "You are a helpful assistant that corrects noisy OCR text. "
                     "Your task is to fix common OCR character substitution errors. "
                     "The most frequent mistakes found in the data include:\n"
                     "- 't' often misread as 'l'\n"
@@ -86,7 +91,7 @@ def get_in_context_messages(input_text: str, in_context: Literal["simple", "comp
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant that corrects noisy OCR text. "
+                    instruction_prompt + "\n" + "You are a helpful assistant that corrects noisy OCR text. "
                     "Your task is to fix OCR errors. The most common issues include character substitutions such as 't' misread as 'l', "
                     "'h' as 'b', 'e' as 'o', and other similar letter substitutions."
                     " Other errors include deletion or insertion of characters, deletion or addition of spaces,"
@@ -235,23 +240,12 @@ def _merge_overlapping_chunks(chunks: list[TextChunk]) -> str:
     return " ".join(result)
 
 
-def extract_denoised_text(generated_text: str) -> str | None:
-    """Extract the denoised text from the generated text.
-    If the denoised text is not found, return None.
-    """
-    match = re.search(r"<denoised>(.*?)</denoised>", generated_text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return None
-
-
 def _denoise_chunk(
     chunk: TextChunk,
     text_pipeline: Pipeline,
     tokenizer: AutoTokenizer,
     model_type: Literal["causal", "seq2seq"],
     in_context: Literal["simple", "complex", "None"] = "None",
-    max_attempts: int = 3,
 ) -> TextChunk:
     """Denoise a single chunk of text.
 
@@ -264,73 +258,38 @@ def _denoise_chunk(
     Returns:
         The denoised chunk.
     """
-    is_instruction_model = (
-        model_type == "causal" and hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None
-    )
+    is_instruction_model = False
     output_marker = "\n\nDenoised text:"
-    if is_instruction_model:
-        if in_context == "simple" or in_context == "complex":
-            message = get_in_context_messages(chunk.text, in_context)
+    if model_type == "causal":
+        if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
+            is_instruction_model = True
+            messages = get_in_context_messages(chunk.text, in_context)
             prompt = tokenizer.apply_chat_template(
-                message,
-                tokenize=False,  # Get the formatted string, not tokenized input
-                add_generation_prompt=True,  # Optional: Adds assistant turn prefix if needed
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
             )
         else:
-            # For instruction-tuned models, use chat template if available
-            instruction_prompt = (
-                "Clean and denoise the given noisy text received from an optical character recognition (OCR) system. "
-                "VERY IMPORTANT: Output ONLY the denoised version of the text in the format <denoised>{denoised_text}</denoised>. "
-                "Do NOT output anything else. "
-                f"Given noisy text: {chunk.text}"
-            )
-            prompt = [{"role": "user", "content": instruction_prompt}]
+            # for base models, we need a prompt that suggests to continue the text
+            prompt = f"Noisy text: {chunk.text}{output_marker}"
     elif model_type == "seq2seq":
         prompt = chunk.text
     else:
-        prompt = f"Noisy text: {chunk.text}{output_marker}"
+        raise ValueError(f"Model type {model_type} not supported")
 
-    for _ in range(max_attempts):
-        outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
-        generated_text = outputs[0]["generated_text"]
-
-        # For base models, we need to clean up the output more carefully
-
-        if in_context == "simple" or in_context == "complex":
-            last_model_response = generated_text[-1]["content"]
-            denoised_chunk_text = extract_denoised_text(last_model_response)
-            # # Split the output by the model's turn marker
-
-            # model_turns = generated_text.split("<start_of_turn>model")
-            # # Take the last occurrence (most recent model response)
-            # last_model_turn = model_turns[-1]
-
-            # # Remove trailing special tokens if needed
-            # denoised_chunk_text = last_model_turn.split("<end_of_turn>")[0].strip()
-    
-    elif model_type == "causal":
-            # denoised_chunk_text = generated_text[-1]["content"].strip()
-
-        else:
-            # Extract text after the last "Output:" marker
-            if output_marker in generated_text:
-                denoised_chunk_text = generated_text.split(output_marker)[-1].strip()
-            else:
-                # Fallback to whole text if marker not found
-                denoised_chunk_text = generated_text.strip()
-    
-        if denoised_chunk_text is not None:
-            logger.info(f"Denoised chunk: {denoised_chunk_text}")
-            return TextChunk(denoised_chunk_text, chunk.start, chunk.end)
-    logger.warning(f"Failed to denoise chunk {chunk.text} after {max_attempts} attempts. Returning the generated text.")
-    return TextChunk(last_model_response, chunk.start, chunk.end)
+    outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
+    generated_text = outputs[0]["generated_text"].strip()
+    if not is_instruction_model:
+        generated_text = generated_text.split(output_marker)[-1].strip()
+    logger.info(f"Generated text: {generated_text}")
+    return TextChunk(generated_text, chunk.start, chunk.end)
 
 
 def denoise(
     text: str,
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
-    chunk_size: int | None = MAX_CONTEXT_TOKENS,
+    chunk_size: int | None = None,  # MAX_CONTEXT_TOKENS,
     overlap: int = DEFAULT_OVERLAP,
     in_context: Literal["simple", "complex", "None"] = "None",
 ) -> str:
@@ -346,7 +305,6 @@ def denoise(
     Returns:
         The denoised text.
     """
-    global text_lengths
     text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
     if chunk_size is not None:
         text_chunks = _split_text_with_overlap(text, chunk_size=chunk_size, overlap=overlap)
