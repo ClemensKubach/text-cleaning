@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from strenum import StrEnum
 from typing import Literal
+import os
 
 import fire
 from huggingface_hub import HfApi
@@ -316,9 +317,10 @@ def _cache_model_and_tokenizer(model: Model):
     """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
     logger.info(f"Caching model and tokenizer for {model.value}...")
     try:
-        AutoTokenizer.from_pretrained(model.value)
-        AutoModel.from_pretrained(model.value)
+        AutoTokenizer.from_pretrained(model.value, cache_dir=os.environ.get("HF_HOME"))
+        AutoModel.from_pretrained(model.value, cache_dir=os.environ.get("HF_HOME"))
         logger.info(f"Successfully cached {model.value}.")
+        logger.info(f"Model and tokenizer are saved in: {os.environ.get('HF_HOME')}")
     except Exception as e:
         logger.error(f"Failed to cache model {model.value}: {e}")
 

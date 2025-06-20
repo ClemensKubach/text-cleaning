@@ -22,8 +22,6 @@
 # load required modules (adjust versions as needed)
 module load profile/deeplrn cuda/12.1 cudnn/8.9.7.29-12--gcc--12.2.0-cuda-12.1
 
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
 cd ~/text-cleaning/LLaMA-Factory
 
 # activate env
@@ -33,7 +31,6 @@ source .venv/bin/activate
 export HF_HOME=~/hf_cache
 export HF_DATASETS_CACHE=~/hf_cache
 export HUGGINGFACE_HUB_CACHE=~/hf_cache
-export TRANSFORMERS_CACHE=~/hf_cache
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 export WANDB_MODE=offline            # set the wandb offline

@@ -86,6 +86,15 @@ UV_TORCH_BACKEND=cu121 uv pip install torch  # force torch to install for cuda 1
 
 Execute the training:
 On the HPC:
+
+Set the following env vars:
+```
+HF_HOME=~/hf_cache
+TRANSFORMERS_OFFLINE=1
+HF_HUB_OFFLINE=1
+````
+
+And run the script:
 ```bash
 sbatch run-denoising-finetuning.slurm.sh
 ```
