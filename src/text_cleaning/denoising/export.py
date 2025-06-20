@@ -1,12 +1,11 @@
 import os
-from typing import Literal
+from pathlib import Path
 
 from huggingface_hub import create_repo, upload_folder
 
 
 def export_model(
-    model_dir: str,
-    model: Literal["gemma", "llama", "minerva"],
+    model_dir: str | Path,
     repo_base_id: str = "ClemensK/ocr-denoising",
     private: bool = False,
     commit_message: str = "Upload fine-tuned model from LLaMA-Factory",
@@ -23,7 +22,8 @@ def export_model(
     if not os.path.isdir(model_dir):
         raise ValueError(f"Model directory does not exist: {model_dir}")
 
-    repo_id = f"{repo_base_id}-{model}"
+    model_name = Path(model_dir).name
+    repo_id = f"{repo_base_id}-{model_name}"
     create_repo(repo_id, private=private, exist_ok=True)
 
     # Upload the directory
