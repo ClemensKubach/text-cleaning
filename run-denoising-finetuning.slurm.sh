@@ -6,7 +6,7 @@
 #SBATCH --job-name=ocr_finetune                             # Job name
 #SBATCH --output=logs/ocr_finetune-%x-%j.out                # Name of stdout output file. %x=job_name, %j=job_number
 #SBATCH --error=logs/ocr_finetune-%x-%j.err                 # Name of stderr output file. %x=job_name, %j=job_number
-#SBATCH -A canals            # account name
+#SBATCH -A try25_navigli            # account name
 #SBATCH -p boost_usr_prod                       # partition (adjust as needed)
 #SBATCH --time=00:15:00              # timing: HH:MM:SS
 #SBATCH -N 1                         # number of nodes
