@@ -84,6 +84,12 @@ uv sync --extra torch --extra metrics --prerelease=allow
 ```
 
 Execute the training:
+On the HPC:
+```bash
+sbatch run-denoising-finetuning.slurm.sh
+```
+
+On the local machine:
 ```bash
 uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
 ```

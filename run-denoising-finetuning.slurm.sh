@@ -21,6 +21,8 @@
 
 # load required modules (adjust versions as needed)
 module load profile/deeplrn cuda/12.1 cudnn/8.9.7.29-12--gcc--12.2.0-cuda-12.1
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 cd ~/text-cleaning/LLaMA-Factory
