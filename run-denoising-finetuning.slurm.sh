@@ -27,7 +27,6 @@ cd ~/text-cleaning/LLaMA-Factory
 # activate env
 source .venv/bin/activate
 
-nividia-smi
 python -c "import torch; print(torch.cuda.is_available())"
 python -c "import torch, sys; print('\n'.join(f'CUDA Device {i}: {torch.cuda.get_device_name(i)}' for i in range(torch.cuda.device_count())) if torch.cuda.is_available() else 'No CUDA devices available.')"
 
@@ -36,6 +35,7 @@ python -c "import torch, sys; print('\n'.join(f'CUDA Device {i}: {torch.cuda.get
 export HF_HOME=~/hf_cache
 export HF_DATASETS_CACHE=~/hf_cache
 export HUGGINGFACE_HUB_CACHE=~/hf_cache
+export FORCE_TORCHRUN=1
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 export WANDB_MODE=offline            # set the wandb offline
