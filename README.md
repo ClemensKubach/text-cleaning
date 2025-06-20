@@ -81,6 +81,7 @@ We use uv to install LLaMA-Factory.
 cd LLaMA-Factory
 uv python pin 3.10
 uv sync --extra torch --extra metrics --prerelease=allow
+UV_TORCH_BACKEND=cu121 uv pip install torch  # force torch to install for cuda 12.1 (that may not be the default on the HPC)
 ```
 
 Execute the training:
