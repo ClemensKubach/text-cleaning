@@ -9,7 +9,6 @@
   "badam_switch_interval": 50,
   "badam_verbose": 2,
   "flash_attn": "fa2",
-  "deepspeed": "examples/deepspeed/ds_z3_config.json",
   "dataset": "ocr_denoising-the_vampyre",
   "template": "llama3",
   "cutoff_len": 16000,

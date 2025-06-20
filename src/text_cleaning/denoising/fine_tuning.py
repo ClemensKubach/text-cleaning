@@ -128,7 +128,6 @@ class LLaMAFactoryConfigs:
             badam_switch_interval=50,
             badam_verbose=2,
             flash_attn="fa2",
-            deepspeed="examples/deepspeed/ds_z3_config.json",
             # dataset
             dataset=self.dataset.value,  # use custom dataset
             template="llama3",  # use llama3 prompt template
@@ -175,7 +174,7 @@ class LLaMAFactoryConfigs:
             badam_switch_interval=50,
             badam_verbose=2,
             flash_attn="fa2",
-            deepspeed="examples/deepspeed/ds_z3_config.json",
+            # deepspeed="examples/deepspeed/ds_z3_config.json",
             # dataset
             dataset=self.dataset.value,  # use custom dataset
             template="llama3",  # use llama3 prompt template
