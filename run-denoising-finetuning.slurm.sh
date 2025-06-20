@@ -37,7 +37,6 @@ export HF_HOME=~/hf_cache
 export HF_DATASETS_CACHE=~/hf_cache
 export HUGGINGFACE_HUB_CACHE=~/hf_cache
 export TRANSFORMERS_OFFLINE=1
-export FORCE_TORCHRUN=1
 export HF_HUB_OFFLINE=1
 export WANDB_MODE=offline            # set the wandb offline
 export CUDA_VISIBLE_DEVICES=0
