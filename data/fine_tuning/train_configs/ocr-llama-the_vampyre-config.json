@@ -15,7 +15,7 @@
   "max_samples": 560000,
   "overwrite_cache": true,
   "preprocessing_num_workers": 16,
-  "output_dir": "/workspaces/text-cleaning/data/fine_tuning/models/sft_llama_the_vampyre",
+  "output_dir": "data/fine_tuning/models/sft_llama_the_vampyre",
   "logging_steps": 10,
   "save_steps": 500,
   "plot_loss": true,
