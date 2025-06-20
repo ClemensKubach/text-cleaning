@@ -40,8 +40,8 @@ class LLaMAFactoryConfigs:
         self.dataset = dataset
         self.train_config_path = SFT_TRAIN_CONFIG_DIR / f"ocr-{model.name.lower()}-{dataset.name.lower()}-config.json"
         self.export_config_path = SFT_MODEL_DIR / f"merged-{model.name.lower()}-config.json"
-        self.sft_output_dir_name = f"sft_{self.model.name.lower()}_{self.dataset.name.lower()}"
-        self.sft_export_dir_name = f"export_{self.model.name.lower()}_{self.dataset.name.lower()}"
+        self.sft_output_dir_name = SFT_MODEL_DIR / f"sft_{self.model.name.lower()}_{self.dataset.name.lower()}"
+        self.sft_export_dir_name = SFT_MODEL_DIR / f"export_{self.model.name.lower()}_{self.dataset.name.lower()}"
 
         self.train_config_args = self._get_train_config_args()
         self.export_config_args = self._get_export_config_args()
@@ -70,10 +70,10 @@ class LLaMAFactoryConfigs:
             raise ValueError(f"Model {self.model} not supported")
         return dict(
             model_name_or_path=self.model.value,
-            adapter_name_or_path=self.sft_output_dir_name,  # load the saved LoRA adapters
+            adapter_name_or_path=str(self.sft_output_dir_name),  # load the saved LoRA adapters
             template=template,  # same to the one in training
             finetuning_type="lora",  # same to the one in training
-            export_dir=self.sft_export_dir_name,  # path to save the merged model
+            export_dir=str(self.sft_export_dir_name),  # path to save the merged model
             export_size=2,  # the file shard size (in GB) of the merged model
             export_device="cpu",  # the device used in export, can be chosen from `cpu` and `cuda`
             export_hub_model_id=model_id,  # your Hugging Face hub model ID
@@ -98,7 +98,7 @@ class LLaMAFactoryConfigs:
             template="gemma",  # use Gemma prompt template
             finetuning_type="lora",  # use LoRA adapters to save memory
             lora_target="all",  # attach LoRA adapters to all linear layers
-            output_dir=self.sft_output_dir_name,  # the path to save LoRA adapters
+            output_dir=str(self.sft_output_dir_name),  # the path to save LoRA adapters
             per_device_train_batch_size=2,  # the batch size
             gradient_accumulation_steps=4,  # the gradient accumulation steps
             lr_scheduler_type="cosine",  # use cosine learning rate scheduler
@@ -136,7 +136,7 @@ class LLaMAFactoryConfigs:
             overwrite_cache=True,
             preprocessing_num_workers=16,
             # output
-            output_dir=self.sft_output_dir_name,
+            output_dir=str(self.sft_output_dir_name),
             logging_steps=10,
             save_steps=500,
             plot_loss=True,
@@ -173,6 +173,7 @@ class LLaMAFactoryConfigs:
             badam_switch_mode="ascending",
             badam_switch_interval=50,
             badam_verbose=2,
+            deepspeed="examples/deepspeed/ds_z3_config.json",
             # dataset
             dataset=self.dataset.value,  # use custom dataset
             template="llama3",  # use llama3 prompt template
@@ -181,7 +182,7 @@ class LLaMAFactoryConfigs:
             overwrite_cache=True,
             preprocessing_num_workers=16,
             # output
-            output_dir=self.sft_output_dir_name,
+            output_dir=str(self.sft_output_dir_name),
             logging_steps=10,
             save_steps=500,
             plot_loss=True,
