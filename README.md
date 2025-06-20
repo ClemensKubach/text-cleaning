@@ -72,6 +72,7 @@ git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
 First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required when configs changed):
 ```bash
 source .venv/bin/activate
+export HF_HOME=~/hf_cache  # might not be enough to add it to the .env file
 python -m text_cleaning.denoising.fine_tuning
 deactivate
 ```
@@ -86,16 +87,8 @@ UV_TORCH_BACKEND=cu121 uv pip install torch  # force torch to install for cuda 1
 
 Execute the training:
 On the HPC:
-
-Set the following env vars:
-```
-HF_HOME=~/hf_cache
-TRANSFORMERS_OFFLINE=1
-HF_HUB_OFFLINE=1
-````
-
-And run the script:
 ```bash
+cd ~/text-cleaning
 sbatch run-denoising-finetuning.slurm.sh
 ```
 
