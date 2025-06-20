@@ -5,6 +5,7 @@ import fire
 from tqdm import tqdm
 from transformers import AutoTokenizer, Pipeline
 from collections import Counter
+from dotenv import load_dotenv
 
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import (
@@ -392,6 +393,7 @@ def denoise_dataset(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     setup_logging()
     do_blocking_hf_login()
     fire.Fire(denoise_dataset, serialize=lambda _: None)

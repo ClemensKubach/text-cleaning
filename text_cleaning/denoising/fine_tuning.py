@@ -6,6 +6,7 @@ from typing import Literal
 
 import fire
 from huggingface_hub import HfApi
+from dotenv import load_dotenv
 
 from text_cleaning.constants import DATA_DIR, BASE_DIR
 from text_cleaning.denoising.denoising import MAX_CONTEXT_TOKENS
@@ -351,6 +352,7 @@ def prepare_fine_tuning(
 
 
 if __name__ == "__main__":
+    load_dotenv()
     setup_logging()
     do_blocking_hf_login()
     fire.Fire(prepare_fine_tuning, serialize=lambda _: None)

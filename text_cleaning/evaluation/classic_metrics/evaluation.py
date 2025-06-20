@@ -11,6 +11,8 @@ from text_cleaning.utils import load_data, save_data
 import argparse
 from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 import torch
+from dotenv import load_dotenv
+from text_cleaning.utils import setup_logging
 
 
 """'tokenizer download for splitting the text on the words properly"""
@@ -275,6 +277,9 @@ def evaluate_dataset(
 
 
 if __name__ == "__main__":
+    load_dotenv()
+    setup_logging()
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--metric",
