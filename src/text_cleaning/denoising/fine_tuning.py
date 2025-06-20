@@ -40,12 +40,12 @@ class LLaMAFactoryConfigs:
         self.dataset = dataset
         self.train_config_path = SFT_TRAIN_CONFIG_DIR / f"ocr-{model.name.lower()}-{dataset.name.lower()}-config.json"
         self.export_config_path = SFT_MODEL_DIR / f"merged-{model.name.lower()}-config.json"
-        self.sft_output_dir_name = (
+        self.sft_output_dir_name = ".." / (
             SFT_MODEL_DIR / f"sft_{self.model.name.lower()}_{self.dataset.name.lower()}"
-        ).relative_to(BASE_DIR / "LLaMA-Factory")
-        self.sft_export_dir_name = (
+        ).relative_to(BASE_DIR)
+        self.sft_export_dir_name = ".." / (
             SFT_MODEL_DIR / f"export_{self.model.name.lower()}_{self.dataset.name.lower()}"
-        ).relative_to(BASE_DIR / "LLaMA-Factory")
+        ).relative_to(BASE_DIR)
 
         self.train_config_args = self._get_train_config_args()
         self.export_config_args = self._get_export_config_args()
