@@ -34,6 +34,5 @@
   "eval_strategy": "steps",
   "eval_steps": 100,
   "report_to": "none",
-  "run_name": "llama_the_vampyre",
-  "wandb_project": "ocr_denoising"
+  "run_name": "llama_the_vampyre"
 }

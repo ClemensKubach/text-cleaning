@@ -341,7 +341,10 @@ def _cache_model_and_tokenizer(model: Model):
         AutoTokenizer.from_pretrained(model.value, cache_dir=os.environ.get("HF_HOME"))
         AutoModel.from_pretrained(model.value, cache_dir=os.environ.get("HF_HOME"))
         logger.info(f"Successfully cached {model.value}.")
-        logger.info(f"Model and tokenizer are saved in: {os.environ.get('HF_HOME')}")
+        cache_location = os.environ.get("HF_HOME")
+        logger.info(
+            f"Model and tokenizer are saved in: {cache_location if cache_location else 'hf default cache location'}"
+        )
     except Exception as e:
         logger.error(f"Failed to cache model {model.value}: {e}")
 

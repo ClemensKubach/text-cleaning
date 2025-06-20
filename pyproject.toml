@@ -30,9 +30,6 @@ dev = [
     "ruff>=0.11.13",
 ]
 
-[tool.pyright]
-typeCheckingMode = "off"
-
 [tool.ruff]
 line-length = 120
 
