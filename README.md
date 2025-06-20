@@ -3,57 +3,60 @@ Text denoising
 
 ## Getting Started
 1. Run `uv sync` to install all dependencies and tools.
-2. Set environment variable HF_TOKEN for accessing Huggingface.
-3. set environment variable GEMINI_API_TOKEN  for accesing the Gemini api for the gemini_as_judge
-4. Run program as module:
+2. To make the CLI commands available, install the project in editable mode:
+   ```bash
+   uv pip install -e .
+   ```
+3. Set environment variable `HF_TOKEN` for accessing Huggingface.
+4. Set environment variable `GEMINI_API_TOKEN` for accessing the Gemini API for the `eval-gemini` command.
 
-   To denoise the text run   `python -m text_cleaning.denoising.denoising --model_name --model_type`
+Now you can run the program from the command line, for example:
+- Denoise text: `text-cleaning denoise --model_name <model> --model_type <type>`
+- Evaluate with classic metrics: `text-cleaning eval-classic --metric <metric_name>`
+- Evaluate with Gemini as a judge: `text-cleaning eval-gemini --evaluation_technique <technique> --input_names <files>`
+- Prepare for fine-tuning: `text-cleaning fine-tune`
 
-   To evaluate the denoising run with classic metrics  `python -m text_cleaning.evaluation.classic_metric.evaluation --metric`
-   
-   To evaluate the denoising run with the LLM(Gemini) as a judge `python -m text_cleaning.evaluation.gemini_as_judge.judge_run --evaluation_technique  --input_names`
-   
 ## Examples
 
 ### Denoising a single example page
 ```bash
 # Run Llama 3.2-1B with simple in-context learning without sentence chunking
-python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --subset="[3,]" --in_context "simple" --use_sentence_chunks=False
+text-cleaning denoise --model_name="meta-llama/Llama-3.2-1B-Instruct" --subset="[3,]" --in_context "simple" --use_sentence_chunks=False
 
 # Run Gemma 3-1B with complex in-context learning, majority voting and sentence chunking
-python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it" --subset="[3,]" --in_context "complex" --num_attempts=5
+text-cleaning denoise --model_name="google/gemma-3-1b-it" --subset="[3,]" --in_context "complex" --num_attempts=5
 
 # Run Minerva 1B without in-context learning (too slow at the moment)
-python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0" --subset="[3,]" --in_context "None"
+text-cleaning denoise --model_name="sapienzanlp/Minerva-1B-base-v1.0" --subset="[3,]" --in_context "None"
 
 # Run BART-base (is not denoising)
-python -m text_cleaning.denoising.denoising --model_name="facebook/bart-base" --model_type="seq2seq" --subset="[3,]" --in_context "None"
+text-cleaning denoise --model_name="facebook/bart-base" --model_type="seq2seq" --subset="[3,]" --in_context "None"
 ```
 
 ### Denoising all pages
 ```bash
-# Run Llama 3.2-1B with simple in-context learning 
-python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --in_context "simple"
+# Run Llama 3.2-1B with simple in-context learning
+text-cleaning denoise --model_name="meta-llama/Llama-3.2-1B-Instruct" --in_context "simple"
 
 # Run Gemma 3-1B
-python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it"
+text-cleaning denoise --model_name="google/gemma-3-1b-it"
 
 # Run Minerva 1B (too slow at the moment)
-python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0"
+text-cleaning denoise --model_name="sapienzanlp/Minerva-1B-base-v1.0"
 
 # Run BART-base (is not denoising)
-python -m text_cleaning.denoising.denoising --model_name="facebook/bart-base" --model_type="seq2seq"
+text-cleaning denoise --model_name="facebook/bart-base" --model_type="seq2seq"
 ```
 ### Evaluation with the classical ocr metrics
 
 ```bash
-python -m text_cleaning.evaluation.classic_metrics.evaluation --metric "WER" --task "single"  
+text-cleaning eval-classic --metric "WER" --task "single" --denoised_data_path "data/ocr_datasets/eng/the_vampyre_ocr_denoised_google-gemma-3-1b-it.json"
 ```
 
 ### Evaluation with the Gemini as a judge 
 
 ```bash
- python -m text_cleaning.evaluation.gemini_as_judge.judge_run --evaluation_technique "pairwise" --input_names "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json" "the_vampyre_ocr_denoised_facebook-bart-base.json"
+ text-cleaning eval-gemini --evaluation_technique "pairwise" --input_names "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json" "the_vampyre_ocr_denoised_facebook-bart-base.json"
 ```
 
 ## Development
@@ -73,7 +76,7 @@ First, prepare the fine-tuning configs and dataset (`--generate_files=True` only
 ```bash
 source .venv/bin/activate
 export HF_HOME=~/hf_cache  # might not be enough to add it to the .env file
-python -m text_cleaning.denoising.fine_tuning
+text-cleaning fine-tune
 deactivate
 ```
 
@@ -81,15 +84,14 @@ We use uv to install LLaMA-Factory.
 ```bash
 cd LLaMA-Factory
 uv python pin 3.10
-uv sync --extra torch --extra metrics --prerelease=allow
+uv sync --extra torch --extra metrics --extra deepspeed --prerelease=allow
 UV_TORCH_BACKEND=cu121 uv pip install torch  # force torch to install for cuda 12.1 (that may not be the default on the HPC)
 ```
 
 Execute the training:
 On the HPC:
 ```bash
-cd ~/text-cleaning
-sbatch run-denoising-finetuning.slurm.sh
+sbatch ~/text-cleaning/run-denoising-finetuning.slurm.sh
 ```
 
 On the local machine:
@@ -101,3 +103,4 @@ Export the model:
 ```bash
 llamafactory-cli export ../data/fine.json
 ```
+

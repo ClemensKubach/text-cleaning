@@ -161,7 +161,6 @@ class LLaMAFactoryConfigs:
             # logging
             report_to="none",
             run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
-            wandb_project=HF_DATASET_REPO_BASE_NAME,
         )
 
     def _get_minerva_train_config_args(self):
@@ -209,7 +208,6 @@ class LLaMAFactoryConfigs:
             # logging
             report_to="wandb",
             run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
-            wandb_project=HF_DATASET_REPO_BASE_NAME,
         )
 
 

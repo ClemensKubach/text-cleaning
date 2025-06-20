@@ -22,7 +22,6 @@ dependencies = [
     "strenum>=0.4.15",
     "bitsandbytes>=0.46.0",
     "python-dotenv>=1.1.0",
-    "deepspeed>=0.17.1",
 ]
 
 [dependency-groups]
@@ -36,3 +35,11 @@ typeCheckingMode = "off"
 
 [tool.ruff]
 line-length = 120
+
+[tool.setuptools]
+include-package-data = true
+packages = ["text_cleaning"]
+package-dir = {"" = "src"}
+
+[project.scripts]
+text-cleaning = "text_cleaning.main:main"
