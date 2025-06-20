@@ -14,7 +14,6 @@
 #SBATCH --ntasks-per-node=1          # number of tasks per node
 #SBATCH --cpus-per-task=4            # number of cpu per task (adjust as needed)
 #SBATCH --gres=gpu:1                 # number of GPUs per node
-#SBATCH --qos=boost_qos_dbg
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Environment setup
