@@ -198,6 +198,10 @@ def _prepare_fine_tuning_task(
     configs.generate_export_config()
 
 
+def get_repo_url(dataset: FineTuningDataset) -> str:
+    return f"{HF_USER_ID}/{dataset.value}"
+
+
 def _prepare_ocr_fine_tuning_dataset(
     dataset: FineTuningDataset,
     ocr_file: str | Path,
@@ -206,7 +210,7 @@ def _prepare_ocr_fine_tuning_dataset(
     test_out_dir: str | Path = SFT_DATASET_DIR / "ocr",
     test_ratio: float = 0.2,
     seed: int = 42,
-) -> str:
+):
     """
     Prepare a LLaMA-Factory dataset from given OCR data for fine-tuning an OCR model.
 
@@ -227,9 +231,6 @@ def _prepare_ocr_fine_tuning_dataset(
         test_out_dir: Path to save the noisy test dataset in original ocr format for later usage.
         test_ratio: Ratio of testing set size to total dataset size.
         seed: Random seed for reproducibility.
-
-    Returns:
-        repo_url: Hugging Face repository URL.
     """
     train_out_dir = Path(train_out_dir)
     test_out_dir = Path(test_out_dir)
@@ -267,7 +268,7 @@ def _prepare_ocr_fine_tuning_dataset(
 
     # push to huggingface
     try:
-        repo_url = f"{HF_USER_ID}/{dataset.value}"
+        repo_url = get_repo_url(dataset)
         api = HfApi()
 
         # Create repository if it doesn't exist
@@ -288,8 +289,6 @@ def _prepare_ocr_fine_tuning_dataset(
         logger.info(f"Dataset pushed to Hugging Face Hub: {repo_url}")
     except Exception as e:
         logger.error(f"Failed to push dataset to Hugging Face Hub: {e}")
-
-    return repo_url
 
 
 def get_model_from_str(value: str) -> Model:
@@ -336,7 +335,7 @@ def prepare_fine_tuning(
                 raise NotImplementedError("Synthetic dataset not implemented yet")
             else:
                 raise ValueError(f"Dataset {dataset} not supported")
-            repo_url = _prepare_ocr_fine_tuning_dataset(
+            _prepare_ocr_fine_tuning_dataset(
                 dataset=dataset, ocr_file=ocr_file, clean_file=clean_file, test_ratio=test_ratio
             )
         # add dataset to LLaMA-Factory dataset_info.json
@@ -345,7 +344,7 @@ def prepare_fine_tuning(
         with open(lf_dataset_info_path, "r", encoding="utf-8") as f:
             lf_dataset_info = json.load(f)
         # Add the new dataset info
-        lf_dataset_info[dataset.value] = {"hf_hub_url": repo_url}
+        lf_dataset_info[dataset.value] = {"hf_hub_url": get_repo_url(dataset)}
         # Write back the updated content
         with open(lf_dataset_info_path, "w", encoding="utf-8") as f:
             json.dump(lf_dataset_info, f, indent=2)

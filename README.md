@@ -64,21 +64,21 @@ Instead of `pip install`, use `uv add` (already installed) to install necessary 
 
 
 ### Fine-tuning with LLaMA-Factory
-First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required once):
-```bash
-python -m text_cleaning.denoising.fine_tuning --generate_files True
-```
-
-
-Now, download LLaMA-Factory:
+First, download LLaMA-Factory:
 ```bash
 git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
-cd LLaMA-Factory
 ```
 
-We use uv to install LLaMA-Factory with python 3.9.
+First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required when configs changed):
 ```bash
-uv python pin 3.9
+python -m text_cleaning.denoising.fine_tuning
+deactivate
+```
+
+We use uv to install LLaMA-Factory.
+```bash
+cd LLaMA-Factory
+#uv python pin 3.9
 uv sync --extra torch --extra metrics --prerelease=allow
 ```
 
