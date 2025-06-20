@@ -337,7 +337,6 @@ def prepare_fine_tuning(
             for model in models:
                 configs = LLaMAFactoryConfigs(model=model, dataset=dataset)
                 _prepare_fine_tuning_task(configs)
-                _cache_model_and_tokenizer(model)
 
             if dataset == FineTuningDataset.THE_VAMPYRE:
                 ocr_file = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json"
@@ -351,6 +350,8 @@ def prepare_fine_tuning(
             _prepare_ocr_fine_tuning_dataset(
                 dataset=dataset, ocr_file=ocr_file, clean_file=clean_file, test_ratio=test_ratio
             )
+        for model in models:
+            _cache_model_and_tokenizer(model)
         # add dataset to LLaMA-Factory dataset_info.json
         lf_dataset_info_path = BASE_DIR / "LLaMA-Factory" / "data" / "dataset_info.json"
         # Read the existing content

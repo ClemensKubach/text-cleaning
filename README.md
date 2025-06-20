@@ -71,6 +71,7 @@ git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
 
 First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required when configs changed):
 ```bash
+source .venv/bin/activate
 python -m text_cleaning.denoising.fine_tuning
 deactivate
 ```
