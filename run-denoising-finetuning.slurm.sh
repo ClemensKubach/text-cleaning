@@ -34,6 +34,7 @@ export HUGGINGFACE_HUB_CACHE=~/hf_cache
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 export WANDB_MODE=offline            # set the wandb offline
+export CUDA_VISIBLE_DEVICES=0
 
 # (optional) load your HuggingFace token from local file
 # export HF_TOKEN=$(python -c "import huggingface_hub; print(huggingface_hub.HfFolder.get_token() or '')")
