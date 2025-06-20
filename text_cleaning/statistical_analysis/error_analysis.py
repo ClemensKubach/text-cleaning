@@ -123,14 +123,14 @@ def cluster_mistakes(substitutions, num_clusters=2, clusters_to_return=1, verbos
     # frequent_mistakes = [(k,substitutions[k]) for k, v in zip(substitutions.keys(), counts) if labels[counts.tolist().index([v])] == frequent_cluster]
     top_clusters = np.argsort(kmeans.cluster_centers_.flatten())[-clusters_to_return:]
 
-    label_names = [
-        "frequent_mistake",
-        "most_frequent_mistake",
-    ]
-    cluster_label_map = {cluster_idx: label_names[i] for i, cluster_idx in enumerate(top_clusters)}
+    if verbose:
+        label_names = [
+            "frequent_mistake",
+            "most_frequent_mistake",
+        ]
+        cluster_label_map = {cluster_idx: label_names[i] for i, cluster_idx in enumerate(top_clusters)}
 
     # Get mistakes belonging to these top clusters
-    if verbose:
         frequent_mistakes = [
             (k, cluster_label_map[lbl])
             for k, v, lbl in zip(substitutions.keys(), counts.flatten(), labels)
