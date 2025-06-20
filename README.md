@@ -80,7 +80,8 @@ UV_TORCH_BACKEND=cu121 uv pip install torch  # force torch to install for cuda 1
 Execute the training:
 On the HPC:
 ```bash
-sbatch ~/text-cleaning/run-denoising-finetuning.slurm.sh
+cd ~/text-cleaning
+sbatch run-denoising-finetuning.slurm.sh
 ```
 
 On the local machine:

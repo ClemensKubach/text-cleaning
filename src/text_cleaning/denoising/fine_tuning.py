@@ -5,14 +5,12 @@ from strenum import StrEnum
 from typing import Literal
 import os
 
-import fire
 from huggingface_hub import HfApi
-from dotenv import load_dotenv
 from transformers import AutoModel, AutoTokenizer
 
 from text_cleaning.constants import DATA_DIR, BASE_DIR
 from text_cleaning.denoising.denoising import MAX_CONTEXT_TOKENS
-from text_cleaning.utils import load_data, save_data, split_dataset, do_blocking_hf_login, setup_logging
+from text_cleaning.utils import load_data, save_data, split_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -389,10 +387,3 @@ def prepare_fine_tuning(
         # Write back the updated content
         with open(lf_dataset_info_path, "w", encoding="utf-8") as f:
             json.dump(lf_dataset_info, f, indent=2)
-
-
-if __name__ == "__main__":
-    load_dotenv()
-    setup_logging()
-    do_blocking_hf_login()
-    fire.Fire(prepare_fine_tuning, serialize=lambda _: None)

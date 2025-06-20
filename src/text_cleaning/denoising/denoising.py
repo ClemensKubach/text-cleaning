@@ -1,20 +1,16 @@
 from dataclasses import dataclass
 from pathlib import Path
 import logging
-import fire
 from tqdm import tqdm
 from transformers import AutoTokenizer, Pipeline
 from collections import Counter
-from dotenv import load_dotenv
 
 from text_cleaning.constants import DATA_DIR
 from text_cleaning.utils import (
-    do_blocking_hf_login,
     load_data,
     model_name_to_path_compatible,
     save_data,
     load_pipeline,
-    setup_logging,
 )
 from typing import Literal
 
@@ -390,10 +386,3 @@ def denoise_dataset(
     save_data(denoised_file_path, denoised_data)
     logger.info(f"Denoised data saved to {denoised_file_path}")
     return denoised_data, denoised_file_path
-
-
-if __name__ == "__main__":
-    load_dotenv()
-    setup_logging()
-    do_blocking_hf_login()
-    fire.Fire(denoise_dataset, serialize=lambda _: None)
