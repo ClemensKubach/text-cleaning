@@ -90,5 +90,5 @@ uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_confi
 
 Export the model:
 ```bash
-!llamafactory-cli export ../data/fine.json
+llamafactory-cli export ../data/fine.json
 ```
