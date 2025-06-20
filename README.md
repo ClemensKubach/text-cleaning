@@ -17,14 +17,14 @@ Text denoising
 
 ### Denoising a single example page
 ```bash
-# Run Llama 3.2-1B
-python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --model_type="causal" --subset="[3,]" --in_context "simple"
+# Run Llama 3.2-1B with simple in-context learning without sentence chunking
+python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --subset="[3,]" --in_context "simple" --use_sentence_chunks=False
 
-# Run Gemma 3-1B
-python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it" --model_type="causal" --subset="[3,]" --in_context "complex"
+# Run Gemma 3-1B with complex in-context learning, majority voting and sentence chunking
+python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it" --subset="[3,]" --in_context "complex" --num_attempts=5
 
-# Run Minerva 1B (too slow at the moment)
-python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0" --model_type="causal" --subset="[3,]" --in_context "None"
+# Run Minerva 1B without in-context learning (too slow at the moment)
+python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0" --subset="[3,]" --in_context "None"
 
 # Run BART-base (is not denoising)
 python -m text_cleaning.denoising.denoising --model_name="facebook/bart-base" --model_type="seq2seq" --subset="[3,]" --in_context "None"
@@ -32,14 +32,14 @@ python -m text_cleaning.denoising.denoising --model_name="facebook/bart-base" --
 
 ### Denoising all pages
 ```bash
-# Run Llama 3.2-1B
-python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --model_type="causal"
+# Run Llama 3.2-1B with simple in-context learning 
+python -m text_cleaning.denoising.denoising --model_name="meta-llama/Llama-3.2-1B-Instruct" --in_context "simple"
 
 # Run Gemma 3-1B
-python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it" --model_type="causal"
+python -m text_cleaning.denoising.denoising --model_name="google/gemma-3-1b-it"
 
 # Run Minerva 1B (too slow at the moment)
-python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0" --model_type="causal"
+python -m text_cleaning.denoising.denoising --model_name="sapienzanlp/Minerva-1B-base-v1.0"
 
 # Run BART-base (is not denoising)
 python -m text_cleaning.denoising.denoising --model_name="facebook/bart-base" --model_type="seq2seq"
