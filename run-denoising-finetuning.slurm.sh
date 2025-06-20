@@ -3,12 +3,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # SLURM job configuration
 # ─────────────────────────────────────────────────────────────────────────────
-#SBATCH --job-name=llama_factory_finetune                             # Job name
-#SBATCH --output=logs/llama_factory_finetune-%x-%j.out                # Name of stdout output file. %x=job_name, %j=job_number
-#SBATCH --error=logs/llama_factory_finetune-%x-%j.err                 # Name of stderr output file. %x=job_name, %j=job_number
-#SBATCH -A <Account_Name>            # account name
+#SBATCH --job-name=ocr_finetune                             # Job name
+#SBATCH --output=logs/ocr_finetune-%x-%j.out                # Name of stdout output file. %x=job_name, %j=job_number
+#SBATCH --error=logs/ocr_finetune-%x-%j.err                 # Name of stderr output file. %x=job_name, %j=job_number
+#SBATCH -A canals            # account name
 #SBATCH -p gpu                       # partition (adjust as needed)
-#SBATCH --time=24:00:00              # timing: HH:MM:SS
+#SBATCH --time=00:15:00              # timing: HH:MM:SS
 #SBATCH -N 1                         # number of nodes
 #SBATCH --ntasks=1                   # number of tasks
 #SBATCH --ntasks-per-node=1          # number of tasks per node
@@ -21,17 +21,20 @@
 
 # load required modules (adjust versions as needed)
 module load profile/deeplrn cuda/12.1
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# activate your virtualenv / conda env
-source /path/to/your/env/bin/activate
+cd ~/text-cleaning/LLaMA-Factory
+
+# activate env
+source .venv/bin/activate
 
 # (optional) point HF and W&B to local caches if on a no‐internet cluster
-export HF_DATASETS_CACHE=/path/to/hf_cache
-export HUGGINGFACE_HUB_CACHE=/path/to/hf_cache
+# export HF_DATASETS_CACHE=~/hf_datasets_cache
+# export HUGGINGFACE_HUB_CACHE=~/hf_hub_cache
 export WANDB_MODE=offline            # set the wandb offline
 
 # (optional) load your HuggingFace token from local file
-export HF_TOKEN=$(python -c "import huggingface_hub; print(huggingface_hub.HfFolder.get_token() or '')")
+# export HF_TOKEN=$(python -c "import huggingface_hub; print(huggingface_hub.HfFolder.get_token() or '')")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Run your Python module

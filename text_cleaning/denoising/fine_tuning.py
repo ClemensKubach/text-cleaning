@@ -7,6 +7,7 @@ from typing import Literal
 import fire
 from huggingface_hub import HfApi
 from dotenv import load_dotenv
+from transformers import AutoModel, AutoTokenizer
 
 from text_cleaning.constants import DATA_DIR, BASE_DIR
 from text_cleaning.denoising.denoising import MAX_CONTEXT_TOKENS
@@ -311,6 +312,17 @@ def get_dataset_from_str(value: str) -> FineTuningDataset:
         raise ValueError(f"Dataset {value} not supported")
 
 
+def _cache_model_and_tokenizer(model: Model):
+    """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
+    logger.info(f"Caching model and tokenizer for {model.value}...")
+    try:
+        AutoTokenizer.from_pretrained(model.value)
+        AutoModel.from_pretrained(model.value)
+        logger.info(f"Successfully cached {model.value}.")
+    except Exception as e:
+        logger.error(f"Failed to cache model {model.value}: {e}")
+
+
 def prepare_fine_tuning(
     models: tuple[Literal["gemma", "llama", "minerva"], ...] = ("gemma", "llama"),
     datasets: tuple[Literal["the_vampyre", "synthetic"], ...] = ("the_vampyre",),
@@ -325,6 +337,7 @@ def prepare_fine_tuning(
             for model in models:
                 configs = LLaMAFactoryConfigs(model=model, dataset=dataset)
                 _prepare_fine_tuning_task(configs)
+                _cache_model_and_tokenizer(model)
 
             if dataset == FineTuningDataset.THE_VAMPYRE:
                 ocr_file = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json"
@@ -344,7 +357,8 @@ def prepare_fine_tuning(
         with open(lf_dataset_info_path, "r", encoding="utf-8") as f:
             lf_dataset_info = json.load(f)
         # Add the new dataset info
-        lf_dataset_info[dataset.value] = {"hf_hub_url": get_repo_url(dataset)}
+        train_file_path = SFT_DATASET_DIR / "llama-factory" / f"{dataset.value}.json"
+        lf_dataset_info[dataset.value] = {"file_name": str(train_file_path)}
         # Write back the updated content
         with open(lf_dataset_info_path, "w", encoding="utf-8") as f:
             json.dump(lf_dataset_info, f, indent=2)

@@ -78,14 +78,16 @@ deactivate
 We use uv to install LLaMA-Factory.
 ```bash
 cd LLaMA-Factory
-#uv python pin 3.9
+uv python pin 3.10
 uv sync --extra torch --extra metrics --prerelease=allow
 ```
 
 Execute the training:
 ```bash
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-gemma-the_vampyre-config.json
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
 ```
 
 Export the model:
+```bash
 !llamafactory-cli export ../data/fine.json
+```
