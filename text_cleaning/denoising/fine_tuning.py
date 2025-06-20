@@ -118,27 +118,50 @@ class LLaMAFactoryConfigs:
 
     def _get_llama_train_config_args(self):
         return dict(
+            # model
+            model_name_or_path=self.model.value,
+            # method
             stage="sft",  # do supervised fine-tuning
             do_train=True,
-            model_name_or_path=self.model.value,
+            finetuning_type="full",
+            use_badam=True,
+            badam_mode="layer",
+            badam_switch_mode="ascending",
+            badam_switch_interval=50,
+            badam_verbose=2,
+            flash_attn="fa2",
+            deepspeed="examples/deepspeed/ds_z3_config.json",
+            # dataset
             dataset=self.dataset.value,  # use custom dataset
             template="llama3",  # use llama3 prompt template
-            finetuning_type="lora",  # use LoRA adapters to save memory
-            lora_target="all",  # attach LoRA adapters to all linear layers
-            output_dir=self.sft_output_dir_name,  # the path to save LoRA adapters
-            per_device_train_batch_size=2,  # the micro batch size
-            gradient_accumulation_steps=4,  # the gradient accumulation steps
-            lr_scheduler_type="cosine",  # use cosine learning rate scheduler
-            logging_steps=5,  # log every 5 steps
-            warmup_ratio=0.1,  # use warmup scheduler
-            save_steps=1000,  # save checkpoint every 1000 steps
-            learning_rate=5e-5,  # the learning rate
-            num_train_epochs=3.0,  # the epochs of training
-            max_samples=500,  # use 500 examples in each dataset
-            max_grad_norm=1.0,  # clip gradient norm to 1.0
-            loraplus_lr_ratio=16.0,  # use LoRA+ algorithm with lambda=16.0
-            fp16=True,  # use float16 mixed precision training
-            report_to="none",  # disable wandb logging
+            cutoff_len=MAX_CONTEXT_TOKENS,
+            max_samples=560000,
+            overwrite_cache=True,
+            preprocessing_num_workers=16,
+            # output
+            output_dir=self.sft_output_dir_name,
+            logging_steps=10,
+            save_steps=500,
+            plot_loss=True,
+            overwrite_output_dir=True,
+            # train
+            per_device_train_batch_size=4,
+            gradient_accumulation_steps=8,
+            learning_rate=1e-5,
+            num_train_epochs=1.0,
+            lr_scheduler_type="cosine",
+            warmup_ratio=0.05,
+            bf16=True,
+            ddp_timeout=180000000,
+            # eval
+            val_size=0.01,
+            per_device_eval_batch_size=4,
+            eval_strategy="steps",
+            eval_steps=100,
+            # logging
+            report_to="none",
+            run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
+            wandb_project=HF_DATASET_REPO_BASE_NAME,
         )
 
     def _get_minerva_train_config_args(self):

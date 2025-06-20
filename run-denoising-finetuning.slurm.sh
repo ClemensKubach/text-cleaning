@@ -27,6 +27,11 @@ cd ~/text-cleaning/LLaMA-Factory
 # activate env
 source .venv/bin/activate
 
+nividia-smi
+python -c "import torch; print(torch.cuda.is_available())"
+python -c "import torch, sys; print('\n'.join(f'CUDA Device {i}: {torch.cuda.get_device_name(i)}' for i in range(torch.cuda.device_count())) if torch.cuda.is_available() else 'No CUDA devices available.')"
+
+
 # (optional) point HF and W&B to local caches if on a no‐internet cluster
 export HF_HOME=~/hf_cache
 export HF_DATASETS_CACHE=~/hf_cache
