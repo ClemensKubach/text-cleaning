@@ -54,5 +54,3 @@ text-cleaning denoise --model_name="sapienzanlp/Minerva-1B-base-v1.0"
 text-cleaning denoise --model_name=ClemensK/gemma-3-1b-it-ocr-denoising-en --is_finetuned True
 # Run Fine-tuned Llama 3.2-1B
 text-cleaning denoise --model_name="ClemensK/Llama-3.2-1B-Instruct-ocr-denoising-en" --is_finetuned True
-# Run Fine-tuned Minerva 1B
-text-cleaning denoise --model_name="ClemensK/Minerva-1B-base-v1.0-ocr-denoising-en" --is_finetuned True
