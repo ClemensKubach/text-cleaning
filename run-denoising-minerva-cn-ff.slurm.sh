@@ -44,13 +44,5 @@ export CUDA_VISIBLE_DEVICES=0
 # Run your Python module
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Run Llama 3.2-1B with simple in-context learning
-text-cleaning denoise --model_name="meta-llama/Llama-3.2-1B-Instruct" --in_context "simple"
-# Run Gemma 3-1B
-text-cleaning denoise --model_name="google/gemma-3-1b-it"
 # Run Minerva 1B
 text-cleaning denoise --model_name="sapienzanlp/Minerva-1B-base-v1.0"
-# Run Fine-tuned Gemma 3-1B
-text-cleaning denoise --model_name="ClemensK/gemma-3-1b-it-ocr-denoising-en" --is_finetuned True
-# Run Fine-tuned Llama 3.2-1B
-text-cleaning denoise --model_name="ClemensK/Llama-3.2-1B-Instruct-ocr-denoising-en" --is_finetuned True
