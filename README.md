@@ -76,9 +76,7 @@ export WANDB_API_KEY=<your_api_key>
 
 First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required when configs changed):
 ```bash
-source .venv/bin/activate
-text-cleaning fine-tune
-deactivate
+uv run text-cleaning fine-tune
 ```
 
 We use uv to install LLaMA-Factory.
@@ -105,7 +103,7 @@ uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_confi
 
 Export the model:
 ```bash
-llamafactory-cli export ../data/fine.json
+uv run --prerelease=allow llamafactory-cli export ../data/fine_tuning/models/merged-gemma-synthetic-config.json
 ```
 
 

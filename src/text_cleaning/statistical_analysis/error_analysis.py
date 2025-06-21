@@ -130,7 +130,7 @@ def cluster_mistakes(substitutions, num_clusters=2, clusters_to_return=1, verbos
         ]
         cluster_label_map = {cluster_idx: label_names[i] for i, cluster_idx in enumerate(top_clusters)}
 
-    # Get mistakes belonging to these top clusters
+        # Get mistakes belonging to these top clusters
         frequent_mistakes = [
             (k, cluster_label_map[lbl])
             for k, v, lbl in zip(substitutions.keys(), counts.flatten(), labels)

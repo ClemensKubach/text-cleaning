@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import logging
 from tqdm import tqdm
-from transformers import AutoTokenizer, Pipeline
+from transformers import AutoTokenizer
+from transformers.pipelines.base import Pipeline
 from collections import Counter
 
 from text_cleaning.constants import DATA_DIR
@@ -30,6 +31,7 @@ def get_in_context_messages(input_text: str, in_context: Literal["simple", "comp
         "VERY IMPORTANT: Output ONLY the denoised version of the text. "
         "Do NOT output anything else. "
     )
+    instruction_prompt = "Clean the following OCR text:"
     if in_context == "None":
         return [{"role": "system", "content": instruction_prompt}, {"role": "user", "content": input_text}]
     elif in_context == "simple":
@@ -265,10 +267,10 @@ def _denoise_chunk(
     denoised_attempts = []
     for _ in range(num_attempts):
         if model_type == "causal":
-            if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
+            if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:  # type: ignore
                 is_instruction_model = True
                 messages = get_in_context_messages(chunk.text, in_context)
-                prompt = tokenizer.apply_chat_template(
+                prompt = tokenizer.apply_chat_template(  # type: ignore
                     messages,
                     tokenize=False,
                     add_generation_prompt=True,
@@ -282,7 +284,7 @@ def _denoise_chunk(
             raise ValueError(f"Model type {model_type} not supported")
 
         outputs = text_pipeline(prompt, max_new_tokens=MAX_NEW_TOKENS)
-        generated_text = outputs[0]["generated_text"].strip()
+        generated_text = outputs[0]["generated_text"].strip()  # type: ignore
         if not is_instruction_model:
             generated_text = generated_text.split(output_marker)[-1].strip()
         denoised_attempts.append(generated_text)
