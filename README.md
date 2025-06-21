@@ -81,7 +81,7 @@ Execute the training:
 On the HPC:
 ```bash
 cd ~/text-cleaning
-sbatch run-denoising-finetuning.slurm.sh
+sbatch run-denoising-finetuning.slurm.sh gemma
 ```
 
 On the local machine:

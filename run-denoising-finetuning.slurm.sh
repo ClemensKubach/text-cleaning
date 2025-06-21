@@ -1,6 +1,21 @@
 #!/bin/bash
 #
 # ─────────────────────────────────────────────────────────────────────────────
+# SLURM job configuration
+# ─────────────────────────────────────────────────────────────────────────────
+#SBATCH --job-name=ocr_finetune                    # Job name with model suffix
+#SBATCH --output=logs/ocr_finetune-%x-%j.out       # Name of stdout output file. %x=job_name, %j=job_number
+#SBATCH --error=logs/ocr_finetune-%x-%j.err        # Name of stderr output file. %x=job_name, %j=job_number
+#SBATCH -A try25_navigli            # account name
+#SBATCH -p boost_usr_prod                       # partition (adjust as needed)
+#SBATCH --time=00:15:00              # timing: HH:MM:SS
+#SBATCH -N 1                         # number of nodes
+#SBATCH --ntasks=1                   # number of tasks
+#SBATCH --ntasks-per-node=1          # number of tasks per node
+#SBATCH --cpus-per-task=4            # number of cpu per task (adjust as needed)
+#SBATCH --gres=gpu:1                 # number of GPUs per node
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Model configuration - Set your desired model here
 # ─────────────────────────────────────────────────────────────────────────────
 # Accept model as command line argument, default to llama if not provided
@@ -14,21 +29,6 @@ if [[ ! "$MODEL" =~ ^(llama|gemma|minerva)$ ]]; then
 fi
 
 echo "Using model: $MODEL"
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SLURM job configuration
-# ─────────────────────────────────────────────────────────────────────────────
-#SBATCH --job-name=ocr_finetune_${MODEL}                    # Job name with model suffix
-#SBATCH --output=logs/ocr_finetune_${MODEL}-%x-%j.out       # Name of stdout output file. %x=job_name, %j=job_number
-#SBATCH --error=logs/ocr_finetune_${MODEL}-%x-%j.err        # Name of stderr output file. %x=job_name, %j=job_number
-#SBATCH -A try25_navigli            # account name
-#SBATCH -p boost_usr_prod                       # partition (adjust as needed)
-#SBATCH --time=00:15:00              # timing: HH:MM:SS
-#SBATCH -N 1                         # number of nodes
-#SBATCH --ntasks=1                   # number of tasks
-#SBATCH --ntasks-per-node=1          # number of tasks per node
-#SBATCH --cpus-per-task=4            # number of cpu per task (adjust as needed)
-#SBATCH --gres=gpu:1                 # number of GPUs per node
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Environment setup
