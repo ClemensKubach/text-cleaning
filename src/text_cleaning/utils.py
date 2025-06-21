@@ -5,13 +5,15 @@ from typing import Literal, Union, Tuple
 import logging
 import sys
 import random
+from strenum import StrEnum
 
 import torch
 from huggingface_hub import login
-from huggingface_hub.errors import HfHubHTTPError
+from huggingface_hub.errors import HfHubHTTPError, OfflineModeIsEnabled
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
+    AutoModel,
     AutoTokenizer,
     pipeline,
     Pipeline,
@@ -27,6 +29,12 @@ from text_cleaning.constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class Model(StrEnum):
+    GEMMA = "google/gemma-3-1b-it"
+    LLAMA = "meta-llama/Llama-3.2-1B-Instruct"
+    MINERVA = "sapienzanlp/Minerva-1B-base-v1.0"
 
 
 def setup_logging():
@@ -73,6 +81,8 @@ def do_blocking_hf_login():
             input("Press enter of finish login!")
     except HfHubHTTPError:
         logger.error("Login via HF_TOKEN secret/envvar and via manual login widget failed or not authorized.")
+    except OfflineModeIsEnabled:
+        logger.warning("Offline mode is enabled. Please disable it to login.")
 
 
 def load_data(file_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json") -> dict[int, str]:
@@ -253,3 +263,21 @@ def merge_datasets(
     save_data(Path(out_noisy_path), merged_noisy_data)
     save_data(Path(out_clean_path), merged_clean_data)
     logger.info(f"Merged datasets saved to {out_noisy_path} and {out_clean_path}")
+
+
+def cache_model_and_tokenizer(model: Model | None = None, model_id: str | None = None):
+    """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
+    model_id = model.value if model is not None else model_id
+    if model_id is None:
+        raise ValueError("Model ID is required to cache a model")
+    logger.info(f"Caching model and tokenizer for {model_id}...")
+    try:
+        AutoTokenizer.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
+        AutoModel.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
+        logger.info(f"Successfully cached {model_id}.")
+        cache_location = os.environ.get("HF_HOME")
+        logger.info(
+            f"Model and tokenizer are saved in: {cache_location if cache_location else 'hf default cache location'}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to cache model {model_id}: {e}")

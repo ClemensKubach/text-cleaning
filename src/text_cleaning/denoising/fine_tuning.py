@@ -3,15 +3,13 @@ import logging
 from pathlib import Path
 from strenum import StrEnum
 from typing import Literal
-import os
 from datetime import datetime
 
 from huggingface_hub import HfApi
-from transformers import AutoModel, AutoTokenizer
 
 from text_cleaning.constants import DATA_DIR, BASE_DIR, SYNTHETIC_OCR_DATASET_PATH, SYNTHETIC_CLEAN_DATASET_PATH
 from text_cleaning.denoising.denoising import MAX_CONTEXT_TOKENS
-from text_cleaning.utils import load_data, save_data, split_dataset
+from text_cleaning.utils import load_data, save_data, split_dataset, cache_model_and_tokenizer, Model
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +25,6 @@ SFT_MODEL_DIR = SFT_DIR / "models"
 class FineTuningDataset(StrEnum):
     THE_VAMPYRE = f"{HF_DATASET_REPO_BASE_NAME}-the_vampyre"
     SYNTHETIC = f"{HF_DATASET_REPO_BASE_NAME}-synthetic"
-
-
-class Model(StrEnum):
-    GEMMA = "google/gemma-3-1b-it"
-    LLAMA = "meta-llama/Llama-3.2-1B-Instruct"
-    MINERVA = "sapienzanlp/Minerva-1B-base-v1.0"
 
 
 class LLaMAFactoryConfigs:
@@ -345,21 +337,6 @@ def get_dataset_from_str(value: str) -> FineTuningDataset:
         raise ValueError(f"Dataset {value} not supported")
 
 
-def _cache_model_and_tokenizer(model: Model):
-    """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
-    logger.info(f"Caching model and tokenizer for {model.value}...")
-    try:
-        AutoTokenizer.from_pretrained(model.value, cache_dir=os.environ.get("HF_HOME"))
-        AutoModel.from_pretrained(model.value, cache_dir=os.environ.get("HF_HOME"))
-        logger.info(f"Successfully cached {model.value}.")
-        cache_location = os.environ.get("HF_HOME")
-        logger.info(
-            f"Model and tokenizer are saved in: {cache_location if cache_location else 'hf default cache location'}"
-        )
-    except Exception as e:
-        logger.error(f"Failed to cache model {model.value}: {e}")
-
-
 def prepare_fine_tuning(
     models: tuple[Literal["gemma", "llama", "minerva"], ...] = ("gemma", "llama", "minerva"),
     datasets: tuple[Literal["the_vampyre", "synthetic"], ...] = ("the_vampyre", "synthetic"),
@@ -389,7 +366,7 @@ def prepare_fine_tuning(
                 dataset=dataset, ocr_file=ocr_file, clean_file=clean_file, test_ratio=test_ratio
             )
         for model in models_obj:
-            _cache_model_and_tokenizer(model)
+            cache_model_and_tokenizer(model)
         # add dataset to LLaMA-Factory dataset_info.json
         lf_dataset_info_path = BASE_DIR / "LLaMA-Factory" / "data" / "dataset_info.json"
         # Read the existing content
