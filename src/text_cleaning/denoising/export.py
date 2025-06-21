@@ -1,9 +1,11 @@
 import os
+import json
 import subprocess
 from pathlib import Path
 import logging
 
 from huggingface_hub import create_repo, upload_folder
+from transformers import AutoModel, AutoTokenizer
 
 from text_cleaning.utils import WANDB_DIR
 
@@ -73,7 +75,104 @@ def export_wandb(
     logger.info(f"Successfully uploaded {len(offline_runs)} run(s) to project '{project_name}'")
 
 
+def _find_latest_checkpoint(checkpoint_dir: Path) -> Path:
+    """
+    Find the latest checkpoint in the given directory.
+
+    Args:
+        checkpoint_dir: Directory containing checkpoints
+
+    Returns:
+        Path to the latest checkpoint directory
+    """
+    if not checkpoint_dir.exists():
+        raise ValueError(f"Checkpoint directory does not exist: {checkpoint_dir}")
+
+    # Look for checkpoint directories (usually named like "checkpoint-1000", "checkpoint-2000", etc.)
+    checkpoint_dirs = []
+    for item in checkpoint_dir.iterdir():
+        if item.is_dir() and item.name.startswith("checkpoint-"):
+            checkpoint_dirs.append(item)
+
+    if not checkpoint_dirs:
+        # If no checkpoint directories found, check if the directory itself contains model files
+        safetensor_files = list(checkpoint_dir.glob("*.safetensors"))
+        if safetensor_files:
+            return checkpoint_dir
+        raise ValueError(f"No checkpoints found in {checkpoint_dir}")
+
+    # Sort by checkpoint number and return the latest
+    checkpoint_dirs.sort(key=lambda x: int(x.name.split("-")[-1]) if x.name.split("-")[-1].isdigit() else 0)
+    latest_checkpoint = checkpoint_dirs[-1]
+
+    logger.info(f"Found latest checkpoint: {latest_checkpoint}")
+    return latest_checkpoint
+
+
 def export_model(
+    config_path: str | Path,
+    private: bool = False,
+    commit_message: str | None = None,
+) -> None:
+    """
+    Export a LLaMA-Factory trained model to the Hugging Face Hub using a config file.
+
+    This function works like the LLaMA-Factory export CLI. It loads the config JSON,
+    finds the latest checkpoint in the adapter directory, and uploads the model,
+    tokenizer, and related files to the Hugging Face Hub using Transformers' push_to_hub method.
+
+    Args:
+        config_path: Path to the LLaMA-Factory export config JSON file.
+        private: Whether to create a private repo if it does not exist.
+        commit_message: Git commit message for the upload. If None, uses a default message.
+    """
+    config_path = Path(config_path)
+    if not config_path.exists():
+        raise ValueError(f"Config file does not exist: {config_path}")
+
+    # Load the config
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    # Extract required fields from config
+    export_hub_model_id = config.get("export_hub_model_id")
+    adapter_name_or_path = config.get("adapter_name_or_path")
+
+    if not export_hub_model_id:
+        raise ValueError("Config must contain 'export_hub_model_id' field")
+    if not adapter_name_or_path:
+        raise ValueError("Config must contain 'adapter_name_or_path' field")
+
+    # Resolve relative paths relative to config file location
+    adapter_path = Path(adapter_name_or_path)
+    if not adapter_path.is_absolute():
+        adapter_path = config_path.parent / adapter_path
+
+    logger.info(f"Exporting model from {adapter_path} to {export_hub_model_id}")
+
+    # Find the latest checkpoint
+    latest_checkpoint = _find_latest_checkpoint(adapter_path)
+
+    # Load model and tokenizer from the checkpoint
+    logger.info(f"Loading model and tokenizer from {latest_checkpoint}")
+    model = AutoModel.from_pretrained(latest_checkpoint)
+    tokenizer = AutoTokenizer.from_pretrained(latest_checkpoint)
+
+    # Set default commit message if not provided
+    if commit_message is None:
+        commit_message = f"Upload fine-tuned model from LLaMA-Factory checkpoint: {latest_checkpoint.name}"
+
+    # Push to hub using Transformers' built-in method
+    logger.info(f"Pushing model to {export_hub_model_id}...")
+    try:
+        model.push_to_hub(export_hub_model_id, private=private, commit_message=commit_message)
+        tokenizer.push_to_hub(export_hub_model_id, private=private, commit_message=commit_message)
+        logger.info(f"Successfully uploaded model to {export_hub_model_id}")
+    except Exception as e:
+        raise RuntimeError(f"Error uploading model to {export_hub_model_id}: {e}")
+
+
+def export_model_legacy(
     model_dir: str | Path,
     repo_base_id: str = "ClemensK/ocr-denoising",
     private: bool = False,
@@ -81,6 +180,8 @@ def export_model(
 ) -> None:
     """
     Uploads a LLaMA-Factory trained model directory to the Hugging Face Hub.
+
+    This is the legacy version of export_model. Use export_model() with config path instead.
 
     Args:
         model_dir: Path to the directory containing the fine-tuned model.

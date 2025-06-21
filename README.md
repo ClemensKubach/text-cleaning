@@ -109,7 +109,12 @@ uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_confi
 
 Export the model:
 ```bash
+cd ~/text-cleaning/LLaMA-Factory
 uv run --prerelease=allow llamafactory-cli export ../data/fine_tuning/models/merged-gemma-synthetic-config.json
+# OR (for non-lora/full finetuning)
+cd ~/text-cleaning
+uv run text-cleaning export_model data/fine_tuning/models/sft_llama_synthetic
+uv run text-cleaning export_model data/fine_tuning/models/sft_minerva_synthetic
 ```
 
 
