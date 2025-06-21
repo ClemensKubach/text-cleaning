@@ -8,7 +8,7 @@
 #SBATCH --error=logs/ocr_finetune-%x-%j.err        # Name of stderr output file. %x=job_name, %j=job_number
 #SBATCH -A try25_navigli            # account name
 #SBATCH -p boost_usr_prod                       # partition (adjust as needed)
-#SBATCH --time=00:15:00              # timing: HH:MM:SS
+#SBATCH --time=02:15:00              # timing: HH:MM:SS
 #SBATCH -N 1                         # number of nodes
 #SBATCH --ntasks=1                   # number of tasks
 #SBATCH --ntasks-per-node=1          # number of tasks per node
@@ -22,6 +22,7 @@
 # load required modules (adjust versions as needed)
 module load profile/deeplrn cuda/12.1 cudnn/8.9.7.29-12--gcc--12.2.0-cuda-12.1
 
+source .venv/bin/activate
 python -c "import torch; print(torch.cuda.is_available())"
 python -c "import torch, sys; print('\n'.join(f'CUDA Device {i}: {torch.cuda.get_device_name(i)}' for i in range(torch.cuda.device_count())) if torch.cuda.is_available() else 'No CUDA devices available.')"
 
@@ -44,4 +45,4 @@ export CUDA_VISIBLE_DEVICES=0
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli
-uv run text-cleaning denoise --model_name=ClemensK/gemma-3-1b-it-ocr-denoising-en
+text-cleaning denoise --model_name=ClemensK/gemma-3-1b-it-ocr-denoising-en

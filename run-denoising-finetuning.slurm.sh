@@ -8,7 +8,7 @@
 #SBATCH --error=logs/ocr_finetune-%x-%j.err        # Name of stderr output file. %x=job_name, %j=job_number
 #SBATCH -A try25_navigli            # account name
 #SBATCH -p boost_usr_prod                       # partition (adjust as needed)
-#SBATCH --time=00:15:00              # timing: HH:MM:SS
+#SBATCH --time=00:20:00              # timing: HH:MM:SS
 #SBATCH -N 1                         # number of nodes
 #SBATCH --ntasks=1                   # number of tasks
 #SBATCH --ntasks-per-node=1          # number of tasks per node
