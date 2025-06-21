@@ -59,19 +59,22 @@ class LLaMAFactoryConfigs:
         if self.model == Model.GEMMA:
             template = "gemma"
             model_id = "gemma-3-1b-it-ocr-denoising-en"
+            finetuning_type = "lora"
         elif self.model == Model.LLAMA:
             template = "llama3"
             model_id = "Llama-3.2-1B-Instruct-ocr-denoising-en"
+            finetuning_type = "full"
         elif self.model == Model.MINERVA:
             template = "llama3"
             model_id = "Minerva-1B-base-v1.0-ocr-denoising-en"
+            finetuning_type = "full"
         else:
             raise ValueError(f"Model {self.model} not supported")
         return dict(
             model_name_or_path=self.model.value,
             adapter_name_or_path=str(self.sft_output_dir_name),  # load the saved LoRA adapters
             template=template,  # same to the one in training
-            finetuning_type="lora",  # same to the one in training
+            finetuning_type=finetuning_type,  # same to the one in training
             export_dir=str(self.sft_export_dir_name),  # path to save the merged model
             export_size=2,  # the file shard size (in GB) of the merged model
             export_device="cpu",  # the device used in export, can be chosen from `cpu` and `cuda`

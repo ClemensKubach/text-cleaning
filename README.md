@@ -87,15 +87,17 @@ We use uv to install LLaMA-Factory.
 ```bash
 cd LLaMA-Factory
 uv python pin 3.10
-uv sync --extra torch --extra metrics --extra badam --extra bitsandbytes --prerelease=allow
-UV_TORCH_BACKEND=cu121 uv pip install torch wandb  # force torch to install for cuda 12.1 (that may not be the default on the HPC)
+uv sync --extra torch --extra metrics --extra badam --extra bitsandbytes --extra deepspeed --prerelease=allow
+UV_TORCH_BACKEND=cu121 uv pip install wandb setuptools torch   # force torch to install for cuda 12.1 (that may not be the default on the HPC)
 ```
 
 Execute the training:
 On the HPC:
 ```bash
 cd ~/text-cleaning
-sbatch run-denoising-finetuning.slurm.sh gemma synthetic
+sbatch run-denoising-finetuning.slurm.sh gemma
+sbatch run-denoising-finetuning.slurm.sh llama
+sbatch run-denoising-finetuning.slurm.sh minerva
 # show output via cat logs/ocr_finetune...job_id.out
 # upload run to wandb via the in log displayed command 
 ```
