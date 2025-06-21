@@ -58,13 +58,18 @@ text-cleaning eval-classic --metric "WER" --task "single" --denoised_data_path "
 ### Fine-tuning with LLaMA-Factory
 First, download LLaMA-Factory into the text-cleaning directory (`cd text-cleaning`):
 ```bash
-git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
+git clone --depth 1 --branch no-processor-fallback --single-branch https://github.com/ClemensKubach/LLaMA-Factory.git
+```
+
+Set important environment variables (when only local machine (not HPC), they can be set in the .env file):
+```bash
+export HF_HOME=~/hf_cache
+export WANDB_API_KEY=<your_api_key>
 ```
 
 First, prepare the fine-tuning configs and dataset (`--generate_files=True` only required when configs changed):
 ```bash
 source .venv/bin/activate
-export HF_HOME=~/hf_cache  # might not be enough to add it to the .env file
 text-cleaning fine-tune
 deactivate
 ```
@@ -74,7 +79,7 @@ We use uv to install LLaMA-Factory.
 cd LLaMA-Factory
 uv python pin 3.10
 uv sync --extra torch --extra metrics --extra badam --extra bitsandbytes --prerelease=allow
-UV_TORCH_BACKEND=cu121 uv pip install torch  # force torch to install for cuda 12.1 (that may not be the default on the HPC)
+UV_TORCH_BACKEND=cu121 uv pip install torch wandb  # force torch to install for cuda 12.1 (that may not be the default on the HPC)
 ```
 
 Execute the training:
@@ -84,7 +89,7 @@ cd ~/text-cleaning
 sbatch run-denoising-finetuning.slurm.sh gemma
 ```
 
-On the local machine:
+Or on the local machine:
 ```bash
 uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
 ```

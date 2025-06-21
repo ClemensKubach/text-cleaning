@@ -32,9 +32,18 @@ def setup_logging():
     )
 
 
-def setup_wandb():
-    os.environ["WANDB_PROJECT"] = "mnlp-h2"
+def setup_wandb(project_name: str = "mnlp-h2"):
+    """Setup wandb configuration.
+
+    Args:
+        project_name: The name of the wandb project. Defaults to "mnlp-h2".
+    """
+    os.environ["WANDB_PROJECT"] = project_name
     os.environ["WANDB_DIR"] = str(WANDB_DIR)
+
+    # Check if WANDB_API_KEY is set in environment
+    if not os.environ.get("WANDB_API_KEY"):
+        logger.warning("WANDB_API_KEY not found in environment variables. Please set it to enable wandb logging.")
 
 
 def _read_hf_token() -> str | None:

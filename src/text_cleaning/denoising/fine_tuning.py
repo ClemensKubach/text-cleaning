@@ -4,6 +4,7 @@ from pathlib import Path
 from strenum import StrEnum
 from typing import Literal
 import os
+from datetime import datetime
 
 from huggingface_hub import HfApi
 from transformers import AutoModel, AutoTokenizer
@@ -38,6 +39,8 @@ class LLaMAFactoryConfigs:
     def __init__(self, model: Model = Model.GEMMA, dataset: FineTuningDataset = FineTuningDataset.THE_VAMPYRE):
         self.model = model
         self.dataset = dataset
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.run_name = f"{model.name.lower()}_{dataset.name.lower()}_{timestamp}"
         self.train_config_path = SFT_TRAIN_CONFIG_DIR / f"ocr-{model.name.lower()}-{dataset.name.lower()}-config.json"
         self.export_config_path = SFT_MODEL_DIR / f"merged-{model.name.lower()}-config.json"
         self.sft_output_dir_name = ".." / (
@@ -123,7 +126,7 @@ class LLaMAFactoryConfigs:
             fp16=True,  # use float16 mixed precision training
             # logging
             report_to="wandb",
-            run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
+            run_name=self.run_name,
         )
 
     def _get_llama_train_config_args(self):
@@ -169,7 +172,7 @@ class LLaMAFactoryConfigs:
             eval_steps=100,
             # logging
             report_to="wandb",
-            run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
+            run_name=self.run_name,
         )
 
     def _get_minerva_train_config_args(self):
@@ -215,7 +218,7 @@ class LLaMAFactoryConfigs:
             eval_steps=100,
             # logging
             report_to="wandb",
-            run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
+            run_name=self.run_name,
         )
 
 
