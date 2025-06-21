@@ -16,19 +16,21 @@
 #SBATCH --gres=gpu:1                 # number of GPUs per node
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Model configuration - Set your desired model here
+# Model and Dataset configuration - Set your desired model and dataset here
 # ─────────────────────────────────────────────────────────────────────────────
-# Accept model as command line argument, default to llama if not provided
-MODEL=${1:-"llama"}  # Usage: sbatch run-denoising-finetuning.slurm.sh [llama|gemma|minerva]
+# Accept model and dataset as command line arguments, default to llama and the_vampyre if not provided
+MODEL=${1:-"llama"}      # Usage: sbatch run-denoising-finetuning.slurm.sh [llama|gemma|minerva] [the_vampyre|synthetic]
+DATASET=${2:-"synthetic"}
 
 # Validate model argument
 if [[ ! "$MODEL" =~ ^(llama|gemma|minerva)$ ]]; then
     echo "Error: Invalid model '$MODEL'. Must be one of: llama, gemma, minerva"
-    echo "Usage: sbatch run-denoising-finetuning.slurm.sh [llama|gemma|minerva]"
+    echo "Usage: sbatch run-denoising-finetuning.slurm.sh [llama|gemma|minerva] [the_vampyre|synthetic]"
     exit 1
 fi
 
 echo "Using model: $MODEL"
+echo "Using dataset: $DATASET"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Environment setup
@@ -64,4 +66,4 @@ export CUDA_VISIBLE_DEVICES=0
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-the_vampyre-config.json
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json

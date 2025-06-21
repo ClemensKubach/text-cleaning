@@ -93,14 +93,14 @@ Execute the training:
 On the HPC:
 ```bash
 cd ~/text-cleaning
-sbatch run-denoising-finetuning.slurm.sh gemma
+sbatch run-denoising-finetuning.slurm.sh gemma synthetic
 # show output via cat logs/ocr_finetune...job_id.out
 # upload run to wandb via the in log displayed command 
 ```
 
 Or on the local machine from LLaMA-Factory directory:
 ```bash
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-synthetic-config.json
 ```
 
 Export the model:
