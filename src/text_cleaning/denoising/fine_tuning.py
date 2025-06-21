@@ -9,7 +9,7 @@ from datetime import datetime
 from huggingface_hub import HfApi
 from transformers import AutoModel, AutoTokenizer
 
-from text_cleaning.constants import DATA_DIR, BASE_DIR
+from text_cleaning.constants import DATA_DIR, BASE_DIR, SYNTHETIC_OCR_DATASET_PATH, SYNTHETIC_CLEAN_DATASET_PATH
 from text_cleaning.denoising.denoising import MAX_CONTEXT_TOKENS
 from text_cleaning.utils import load_data, save_data, split_dataset
 
@@ -42,7 +42,7 @@ class LLaMAFactoryConfigs:
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.run_name = f"{model.name.lower()}_{dataset.name.lower()}_{timestamp}"
         self.train_config_path = SFT_TRAIN_CONFIG_DIR / f"ocr-{model.name.lower()}-{dataset.name.lower()}-config.json"
-        self.export_config_path = SFT_MODEL_DIR / f"merged-{model.name.lower()}-config.json"
+        self.export_config_path = SFT_MODEL_DIR / f"merged-{model.name.lower()}-{dataset.name.lower()}-config.json"
         self.sft_output_dir_name = ".." / (
             SFT_MODEL_DIR / f"sft_{self.model.name.lower()}_{self.dataset.name.lower()}"
         ).relative_to(BASE_DIR)
@@ -361,17 +361,17 @@ def _cache_model_and_tokenizer(model: Model):
 
 
 def prepare_fine_tuning(
-    models: tuple[Literal["gemma", "llama", "minerva"], ...] = ("gemma", "llama"),
-    datasets: tuple[Literal["the_vampyre", "synthetic"], ...] = ("the_vampyre",),
+    models: tuple[Literal["gemma", "llama", "minerva"], ...] = ("gemma", "llama", "minerva"),
+    datasets: tuple[Literal["the_vampyre", "synthetic"], ...] = ("the_vampyre", "synthetic"),
     generate_files: bool = False,
 ) -> None:
     """Prepare the fine-tuning dataset and generate the LLaMA-Factory config file."""
-    models = [get_model_from_str(model) for model in models]
-    datasets = [get_dataset_from_str(dataset) for dataset in datasets]
+    models_obj = [get_model_from_str(model) for model in models]
+    datasets_obj = [get_dataset_from_str(dataset) for dataset in datasets]
 
-    for dataset in datasets:
+    for dataset in datasets_obj:
         if generate_files:
-            for model in models:
+            for model in models_obj:
                 configs = LLaMAFactoryConfigs(model=model, dataset=dataset)
                 _prepare_fine_tuning_task(configs)
 
@@ -380,14 +380,15 @@ def prepare_fine_tuning(
                 clean_file = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json"
                 test_ratio = 0.5
             elif dataset == FineTuningDataset.SYNTHETIC:
-                # TODO add path to synthetic dataset
-                raise NotImplementedError("Synthetic dataset not implemented yet")
+                ocr_file = SYNTHETIC_OCR_DATASET_PATH
+                clean_file = SYNTHETIC_CLEAN_DATASET_PATH
+                test_ratio = 0.0
             else:
                 raise ValueError(f"Dataset {dataset} not supported")
             _prepare_ocr_fine_tuning_dataset(
                 dataset=dataset, ocr_file=ocr_file, clean_file=clean_file, test_ratio=test_ratio
             )
-        for model in models:
+        for model in models_obj:
             _cache_model_and_tokenizer(model)
         # add dataset to LLaMA-Factory dataset_info.json
         lf_dataset_info_path = BASE_DIR / "LLaMA-Factory" / "data" / "dataset_info.json"

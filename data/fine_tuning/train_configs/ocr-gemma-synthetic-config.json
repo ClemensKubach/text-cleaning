@@ -4,10 +4,10 @@
   "do_train": true,
   "finetuning_type": "lora",
   "lora_target": "all",
-  "dataset": "ocr_denoising-the_vampyre",
+  "dataset": "ocr_denoising-synthetic",
   "template": "gemma",
   "max_samples": 560000,
-  "output_dir": "../data/fine_tuning/models/sft_gemma_the_vampyre",
+  "output_dir": "../data/fine_tuning/models/sft_gemma_synthetic",
   "logging_steps": 10,
   "save_steps": 1000,
   "per_device_train_batch_size": 2,
@@ -21,5 +21,5 @@
   "loraplus_lr_ratio": 16.0,
   "fp16": true,
   "report_to": "wandb",
-  "run_name": "gemma_the_vampyre_20250621-131925"
+  "run_name": "gemma_synthetic_20250621-131945"
 }

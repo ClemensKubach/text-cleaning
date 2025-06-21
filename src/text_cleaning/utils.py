@@ -18,7 +18,13 @@ from transformers import (
     BitsAndBytesConfig,
 )
 
-from text_cleaning.constants import DATA_DIR, IN_COLAB, WANDB_DIR
+from text_cleaning.constants import (
+    DATA_DIR,
+    IN_COLAB,
+    SYNTHETIC_CLEAN_DATASET_PATH,
+    SYNTHETIC_OCR_DATASET_PATH,
+    WANDB_DIR,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -221,3 +227,29 @@ def split_dataset(
     test_data = {page: data[page] for page in test_pages}
 
     return train_data, test_data
+
+
+def merge_datasets(
+    noisy_datasets: list[str],
+    clean_datasets: list[str],
+    out_noisy_path: str | Path = SYNTHETIC_OCR_DATASET_PATH,
+    out_clean_path: str | Path = SYNTHETIC_CLEAN_DATASET_PATH,
+) -> None:
+    """Merge multiple datasets into a single dataset."""
+    merged_noisy_data = {}
+    merged_clean_data = {}
+    new_page_number = 0
+    for noisy_dataset, clean_dataset in zip(noisy_datasets, clean_datasets):
+        noisy_data = load_data(Path(noisy_dataset))
+        clean_data = load_data(Path(clean_dataset))
+        for page, noisy_text in noisy_data.items():
+            merged_noisy_data[new_page_number] = noisy_text
+            merged_clean_data[new_page_number] = clean_data.pop(page)
+            new_page_number += 1
+        if len(clean_data) > 0:
+            raise ValueError(
+                f"Clean data has {len(clean_data)} pages left after merging, maybe the passed datasets are not aligned?"
+            )
+    save_data(Path(out_noisy_path), merged_noisy_data)
+    save_data(Path(out_clean_path), merged_clean_data)
+    logger.info(f"Merged datasets saved to {out_noisy_path} and {out_clean_path}")

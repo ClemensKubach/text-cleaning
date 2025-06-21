@@ -1,0 +1,10 @@
+{
+  "model_name_or_path": "sapienzanlp/Minerva-1B-base-v1.0",
+  "adapter_name_or_path": "../data/fine_tuning/models/sft_minerva_the_vampyre",
+  "template": "llama3",
+  "finetuning_type": "lora",
+  "export_dir": "../data/fine_tuning/models/export_minerva_the_vampyre",
+  "export_size": 2,
+  "export_device": "cpu",
+  "export_hub_model_id": "Minerva-1B-base-v1.0-ocr-denoising-en"
+}

@@ -43,6 +43,13 @@ text-cleaning denoise --model_name="sapienzanlp/Minerva-1B-base-v1.0"
 text-cleaning denoise --model_name="facebook/bart-base" --model_type="seq2seq"
 ```
 
+### Merging existing datasets
+For the following example, the merged dataset is already integrated and named synthetic. The output is saved in the data directory: `data/ocr_datasets/eng/synthetic_ocr.json` and `data/ocr_datasets/eng/synthetic_clean.json`.
+
+```bash
+text-cleaning merge_datasets --noisy_datasets '["src/text_cleaning/ocr_text_creating/ocr_frankenstein.json", "src/text_cleaning/ocr_text_creating/ocr_otoranto.json"]' --clean_datasets '["src/text_cleaning/ocr_text_creating/clean_frankenstein.json", "src/text_cleaning/ocr_text_creating/clean_otoranto.json"]'
+```
+
 ### Evaluation with the classical ocr metrics
 
 ```bash
@@ -87,9 +94,11 @@ On the HPC:
 ```bash
 cd ~/text-cleaning
 sbatch run-denoising-finetuning.slurm.sh gemma
+# show output via cat logs/ocr_finetune...job_id.out
+# upload run to wandb via the in log displayed command 
 ```
 
-Or on the local machine:
+Or on the local machine from LLaMA-Factory directory:
 ```bash
 uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
 ```
