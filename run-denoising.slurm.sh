@@ -44,4 +44,4 @@ export CUDA_VISIBLE_DEVICES=0
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli
-uv run --prerelease=allow text-cleaning denoising --model_name=ClemensK/gemma-3-1b-it-ocr-denoising-en
+uv run text-cleaning denoise --model_name=ClemensK/gemma-3-1b-it-ocr-denoising-en
