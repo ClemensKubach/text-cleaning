@@ -24,14 +24,28 @@ FILE_WRITE_CHUNK_STATS = DATA_DIR / "statistical_analysis" / "chunk_stats"
 FILE_WRITE_CHUNK_STATS.mkdir(parents=True, exist_ok=True)
 
 
-def get_in_context_messages(input_text: str, in_context: Literal["simple", "complex", "None"]) -> list[dict]:
-    instruction_prompt = (
-        "Clean and denoise the noisy text you will receive. It is determined from an optical character recognition (OCR) system. "
-        "Denoise the text word by word or character by character to existing words. Do not change grammar, word order or meaning of the text. "
-        "VERY IMPORTANT: Output ONLY the denoised version of the text. "
-        "Do NOT output anything else. "
-    )
-    instruction_prompt = "Clean the following OCR text:"
+def get_in_context_messages(
+    input_text: str, in_context: Literal["simple", "complex", "None"], is_finetuned: bool = False
+) -> list[dict]:
+    """Get the messages for optional in-context learning.
+
+    Args:
+        input_text: The text to be denoised.
+        in_context: The type of in-context learning to use.
+        is_finetuned: Whether the model is finetuned or not.
+
+    Returns:
+        The messages for optional in-context learning.
+    """
+    if is_finetuned:
+        instruction_prompt = "Clean the following OCR text:"
+    else:
+        instruction_prompt = (
+            "Clean and denoise the noisy text you will receive. It is determined from an optical character recognition (OCR) system. "
+            "Denoise the text word by word or character by character to existing words. Do not change grammar, word order or meaning of the text. "
+            "VERY IMPORTANT: Output ONLY the denoised version of the text. "
+            "Do NOT output anything else. "
+        )
     if in_context == "None":
         return [{"role": "system", "content": instruction_prompt}, {"role": "user", "content": input_text}]
     elif in_context == "simple":
@@ -246,6 +260,7 @@ def _denoise_chunk(
     model_type: Literal["causal", "seq2seq"],
     in_context: Literal["simple", "complex", "None"] = "None",
     num_attempts: int = 1,
+    is_finetuned: bool = False,
 ) -> TextChunk:
     """Denoise a single chunk of text, optionally with multiple attempts and majority voting.
 
@@ -256,6 +271,7 @@ def _denoise_chunk(
         model_type: The type of model being used.
         in_context: The type of in-context learning to use.
         num_attempts: Number of denoising attempts for majority voting (default=1).
+        is_finetuned: Whether the model is finetuned or not.
 
     Returns:
         The denoised chunk, if num_attempts=1 returns the direct output,
@@ -269,7 +285,7 @@ def _denoise_chunk(
         if model_type == "causal":
             if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:  # type: ignore
                 is_instruction_model = True
-                messages = get_in_context_messages(chunk.text, in_context)
+                messages = get_in_context_messages(chunk.text, in_context, is_finetuned)
                 prompt = tokenizer.apply_chat_template(  # type: ignore
                     messages,
                     tokenize=False,
@@ -306,6 +322,7 @@ def denoise(
     in_context: Literal["simple", "complex", "None"] = "None",
     use_sentence_chunks: bool = True,
     num_attempts: int = 1,
+    is_finetuned: bool = False,
 ) -> str:
     """
     Denoise OCR text using the chosen model.
@@ -316,6 +333,7 @@ def denoise(
         in_context: The type of in-context learning to use.
         use_sentence_chunks: If True, processes text sentence by sentence. If False, processes whole text at once.
         num_attempts: Number of denoising attempts for majority voting (default=1).
+        is_finetuned: Whether the model is finetuned or not.
 
     Returns:
         The denoised text.
@@ -325,7 +343,9 @@ def denoise(
 
     denoised_chunks = []
     for chunk in text_chunks:
-        denoised_chunks.append(_denoise_chunk(chunk, text_pipeline, tokenizer, model_type, in_context, num_attempts))
+        denoised_chunks.append(
+            _denoise_chunk(chunk, text_pipeline, tokenizer, model_type, in_context, num_attempts, is_finetuned)
+        )
 
     # Merge the denoised chunks
     merged_text = _merge_chunks(denoised_chunks)
@@ -341,6 +361,7 @@ def denoise_dataset(
     use_sentence_chunks: bool = True,
     num_attempts: int = 1,
     subset: list[int] | None = None,
+    is_finetuned: bool = False,
 ) -> tuple[dict[int, str], Path]:
     """
     Denoise a dataset of text.
@@ -358,6 +379,7 @@ def denoise_dataset(
         use_sentence_chunks: If True, processes text sentence by sentence. If False, processes whole text at once.
         num_attempts: Number of denoising attempts for majority voting (default=1).
         subset: The subset of the data to denoise.
+        is_finetuned: Whether the model is finetuned or not.
 
     Returns:
         A tuple containing:
@@ -381,6 +403,7 @@ def denoise_dataset(
             in_context=in_context,
             use_sentence_chunks=use_sentence_chunks,
             num_attempts=num_attempts,
+            is_finetuned=is_finetuned,
         )
     denoised_file_path = noisy_data_path.with_name(
         f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"
