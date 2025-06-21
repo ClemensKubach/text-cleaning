@@ -145,8 +145,6 @@ def export_model(
 
     # Resolve relative paths relative to config file location
     adapter_path = Path(adapter_name_or_path)
-    if not adapter_path.is_absolute():
-        adapter_path = config_path.parent / adapter_path
 
     logger.info(f"Exporting model from {adapter_path} to {export_hub_model_id}")
 

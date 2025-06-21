@@ -113,8 +113,10 @@ cd ~/text-cleaning/LLaMA-Factory
 uv run --prerelease=allow llamafactory-cli export ../data/fine_tuning/models/merged-gemma-synthetic-config.json
 # OR (for non-lora/full finetuning)
 cd ~/text-cleaning
-uv run text-cleaning export_model data/fine_tuning/models/sft_llama_synthetic
-uv run text-cleaning export_model data/fine_tuning/models/sft_minerva_synthetic
+source .venv/bin/activate
+cd LLaMA-Factory  # the following must be run from the LLaMA-Factory directory
+text-cleaning export_model ../data/fine_tuning/models/merged-llama-synthetic-config.json
+text-cleaning export_model ../data/fine_tuning/models/merged-minerva-synthetic-config.json
 ```
 
 
