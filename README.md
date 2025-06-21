@@ -47,6 +47,11 @@ text-cleaning denoise --model_name="ClemensK/Llama-3.2-1B-Instruct-ocr-denoising
 text-cleaning denoise --model_name="ClemensK/Minerva-1B-base-v1.0-ocr-denoising-en" --is_finetuned True
 ```
 
+You can also use the `run-denoising.slurm.sh` script to run the denoising on the HPC:
+```bash
+sbatch run-denoising.slurm.sh
+```
+
 ### Merging existing datasets
 For the following example, the merged dataset is already integrated and named synthetic. The output is saved in the data directory: `data/ocr_datasets/eng/synthetic_ocr.json` and `data/ocr_datasets/eng/synthetic_clean.json`.
 
