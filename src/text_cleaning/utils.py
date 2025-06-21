@@ -64,8 +64,10 @@ def _read_hf_token() -> str | None:
     """Read the HF_TOKEN from the userdata or the environment variables."""
     if IN_COLAB:
         try:
-            return userdata.get("HF_TOKEN")  # type: ignore # noqa: F821
-        except KeyError:
+            from google.colab import userdata  # type: ignore[import-untyped]
+
+            return userdata.get("HF_TOKEN")
+        except (KeyError, ImportError):
             return None
     else:
         return os.environ.get("HF_TOKEN", None)
