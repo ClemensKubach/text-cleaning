@@ -1,11 +1,26 @@
 #!/bin/bash
 #
 # ─────────────────────────────────────────────────────────────────────────────
+# Model configuration - Set your desired model here
+# ─────────────────────────────────────────────────────────────────────────────
+# Accept model as command line argument, default to llama if not provided
+MODEL=${1:-"llama"}  # Usage: sbatch run-denoising-finetuning.slurm.sh [llama|gemma|minerva]
+
+# Validate model argument
+if [[ ! "$MODEL" =~ ^(llama|gemma|minerva)$ ]]; then
+    echo "Error: Invalid model '$MODEL'. Must be one of: llama, gemma, minerva"
+    echo "Usage: sbatch run-denoising-finetuning.slurm.sh [llama|gemma|minerva]"
+    exit 1
+fi
+
+echo "Using model: $MODEL"
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SLURM job configuration
 # ─────────────────────────────────────────────────────────────────────────────
-#SBATCH --job-name=ocr_finetune                             # Job name
-#SBATCH --output=logs/ocr_finetune-%x-%j.out                # Name of stdout output file. %x=job_name, %j=job_number
-#SBATCH --error=logs/ocr_finetune-%x-%j.err                 # Name of stderr output file. %x=job_name, %j=job_number
+#SBATCH --job-name=ocr_finetune_${MODEL}                    # Job name with model suffix
+#SBATCH --output=logs/ocr_finetune_${MODEL}-%x-%j.out       # Name of stdout output file. %x=job_name, %j=job_number
+#SBATCH --error=logs/ocr_finetune_${MODEL}-%x-%j.err        # Name of stderr output file. %x=job_name, %j=job_number
 #SBATCH -A try25_navigli            # account name
 #SBATCH -p boost_usr_prod                       # partition (adjust as needed)
 #SBATCH --time=00:15:00              # timing: HH:MM:SS
@@ -49,4 +64,4 @@ export CUDA_VISIBLE_DEVICES=0
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-the_vampyre-config.json
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-the_vampyre-config.json

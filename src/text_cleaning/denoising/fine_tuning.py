@@ -95,27 +95,35 @@ class LLaMAFactoryConfigs:
 
     def _get_gemma_train_config_args(self):
         return dict(
+            # model
+            model_name_or_path=self.model.value,
+            # method
             stage="sft",  # do supervised fine-tuning
             do_train=True,
-            model_name_or_path=self.model.value,
-            dataset=str(self.dataset),  # use the custom dataset
-            template="gemma",  # use Gemma prompt template
             finetuning_type="lora",  # use LoRA adapters to save memory
             lora_target="all",  # attach LoRA adapters to all linear layers
+            # dataset
+            dataset=str(self.dataset),  # use the custom dataset
+            template="gemma",  # use Gemma prompt template
+            max_samples=560000,
+            # output
             output_dir=str(self.sft_output_dir_name),  # the path to save LoRA adapters
+            logging_steps=10,  # log every 10 steps
+            save_steps=1000,  # save checkpoint every 1000 steps
+            # train
             per_device_train_batch_size=2,  # the batch size
             gradient_accumulation_steps=4,  # the gradient accumulation steps
-            lr_scheduler_type="cosine",  # use cosine learning rate scheduler
-            logging_steps=10,  # log every 10 steps
-            warmup_ratio=0.1,  # use warmup scheduler
-            save_steps=1000,  # save checkpoint every 1000 steps
             learning_rate=5e-5,  # the learning rate
             num_train_epochs=3.0,  # the epochs of training
-            max_samples=500,  # use 500 examples in each dataset
+            lr_scheduler_type="cosine",  # use cosine learning rate scheduler
+            warmup_ratio=0.1,  # use warmup scheduler
             max_grad_norm=1.0,  # clip gradient norm to 1.0
-            quantization_bit=4,  # use 4-bit QLoRA
+            quantization_bit=4,  # use 4-bit QLoRA (gemma seems to require it)
             loraplus_lr_ratio=16.0,  # use LoRA+ algorithm with lambda=16.0
             fp16=True,  # use float16 mixed precision training
+            # logging
+            report_to="wandb",
+            run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
         )
 
     def _get_llama_train_config_args(self):
@@ -149,18 +157,18 @@ class LLaMAFactoryConfigs:
             per_device_train_batch_size=4,
             gradient_accumulation_steps=8,
             learning_rate=1e-5,
-            num_train_epochs=1.0,
+            num_train_epochs=2.0,
             lr_scheduler_type="cosine",
             warmup_ratio=0.05,
             bf16=True,
             ddp_timeout=180000000,
             # eval
-            val_size=0.01,
+            val_size=0.1,
             per_device_eval_batch_size=4,
             eval_strategy="steps",
             eval_steps=100,
             # logging
-            report_to="none",
+            report_to="wandb",
             run_name=f"{self.model.name.lower()}_{self.dataset.name.lower()}",
         )
 
