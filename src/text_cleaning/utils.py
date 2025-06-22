@@ -281,7 +281,11 @@ def _get_model_id_from_string(model_str: str) -> str:
         raise ValueError(f"Unknown model string: {model_str}. Supported values: gemma, llama, minerva")
 
 
-def cache_model_and_tokenizer(model: Model | str | None = None, model_id: str | None = None):
+def cache_model_and_tokenizer(
+    model: Model | str | None = None,
+    model_id: str | None = None,
+    model_type: Literal["causal", "seq2seq"] = "causal",
+):
     """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
     if model is not None:
         if isinstance(model, Model):
@@ -292,7 +296,12 @@ def cache_model_and_tokenizer(model: Model | str | None = None, model_id: str | 
         raise ValueError("Model ID is required to cache a model")
     logger.info(f"Caching model and tokenizer for {model_id}...")
     try:
-        AutoModel.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
+        if model_type == "causal":
+            AutoModelForCausalLM.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
+        elif model_type == "seq2seq":
+            AutoModelForSeq2SeqLM.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
+        else:
+            raise ValueError(f"Unknown model type: {model_type}. Supported values: causal, seq2seq")
         AutoTokenizer.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
         logger.info(f"Successfully cached {model_id}.")
         cache_location = os.environ.get("HF_HOME")
