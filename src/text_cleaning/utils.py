@@ -15,10 +15,9 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     AutoModel,
     AutoTokenizer,
-    pipeline,
-    Pipeline,
-    BitsAndBytesConfig,
 )
+from transformers.pipelines import pipeline, Pipeline
+from transformers.utils.quantization_config import BitsAndBytesConfig
 
 from text_cleaning.constants import (
     DATA_DIR,
@@ -267,11 +266,26 @@ def merge_datasets(
     logger.info(f"Merged datasets saved to {out_noisy_path} and {out_clean_path}")
 
 
+def _get_model_id_from_string(model_str: str) -> str:
+    """Convert a simple model string to the full model ID."""
+    model_str_lower = model_str.lower()
+    if model_str_lower == "gemma":
+        return Model.GEMMA.value
+    elif model_str_lower == "llama":
+        return Model.LLAMA.value
+    elif model_str_lower == "minerva":
+        return Model.MINERVA.value
+    else:
+        raise ValueError(f"Unknown model string: {model_str}. Supported values: gemma, llama, minerva")
+
+
 def cache_model_and_tokenizer(model: Model | str | None = None, model_id: str | None = None):
     """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
     if model is not None:
-        model = Model(model)
-        model_id = model.value
+        if isinstance(model, Model):
+            model_id = model.value
+        else:
+            model_id = _get_model_id_from_string(model)
     if model_id is None:
         raise ValueError("Model ID is required to cache a model")
     logger.info(f"Caching model and tokenizer for {model_id}...")

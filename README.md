@@ -50,6 +50,7 @@ text-cleaning denoise --model_name="ClemensK/Minerva-1B-base-v1.0-ocr-denoising-
 You can also use the `run-denoising.slurm.sh` script to run the denoising on the HPC.
 First, cache the model and tokenizer, then run the denoising script.
 ```bash
+export HF_HOME=$SCRATCH/hf_cache
 uv run text-cleaning cache_model --model "gemma"
 uv run text-cleaning cache_model --model "llama"
 uv run text-cleaning cache_model --model "minerva"
