@@ -56,12 +56,11 @@ export HF_HUB_OFFLINE=1
 export WANDB_MODE=offline            # set the wandb offline
 export CUDA_VISIBLE_DEVICES=0
 
-# (optional) load your HuggingFace token from local file
-# export HF_TOKEN=$(python -c "import huggingface_hub; print(huggingface_hub.HfFolder.get_token() or '')")
+echo "HF_HOME: $HF_HOME"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Run your Python module
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli add HF_HOME to the model_name_or_path
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json --cache-dir=${HF_HOME}
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json --cache-dir=$HF_HOME
