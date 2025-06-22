@@ -115,6 +115,7 @@ sbatch run-denoising-finetuning.slurm.sh minerva
 # show output via cat logs/ocr_finetune...job_id.out
 # upload run to wandb via the in log displayed command 
 ```
+If there was an error, unset the HF_HOME variable and cache again, because it searches the models in HF_HOME/hub (known hf version issue) and try again.
 
 Or on the local machine from LLaMA-Factory directory:
 ```bash
@@ -125,6 +126,7 @@ Export the model:
 ```bash
 cd ~/text-cleaning/LLaMA-Factory
 uv run --prerelease=allow llamafactory-cli export ../data/fine_tuning/models/merged-gemma-synthetic-config.json
+uv run --prerelease=allow llamafactory-cli export ../data/fine_tuning/models/merged-llama-synthetic-config.json
 # OR (for non-lora/full finetuning)
 cd ~/text-cleaning
 source .venv/bin/activate

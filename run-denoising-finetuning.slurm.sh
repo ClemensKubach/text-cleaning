@@ -55,7 +55,7 @@ export FORCE_TORCHRUN=1
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 export WANDB_MODE=offline            # set the wandb offline
-export CUDA_VISIBLE_DEVICES=0
+# export CUDA_VISIBLE_DEVICES=0
 
 echo "HF_HOME: $HF_HOME"
 
