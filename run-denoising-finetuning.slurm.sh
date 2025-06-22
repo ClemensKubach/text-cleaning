@@ -63,4 +63,4 @@ echo "HF_HOME: $HF_HOME"
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli add HF_HOME to the model_name_or_path
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json --cache-dir=$HF_HOME
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json --cache_dir=$HF_HOME
