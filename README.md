@@ -47,12 +47,14 @@ text-cleaning denoise --model_name="ClemensK/Llama-3.2-1B-Instruct-ocr-denoising
 text-cleaning denoise --model_name="ClemensK/Minerva-1B-base-v1.0-ocr-denoising-en" --is_finetuned True
 ```
 
-You can also use the `run-denoising.slurm.sh` script to run the denoising on the HPC:
-
-When running for a non-default model like a fine-tuned model, you need to cache the model and tokenizer first.
+You can also use the `run-denoising.slurm.sh` script to run the denoising on the HPC.
+First, cache the model and tokenizer, then run the denoising script.
 ```bash
-text-cleaning cache_model --model_id "ClemensK/gemma-3-1b-it-ocr-denoising-en"
-text-cleaning cache_model --model_id "ClemensK/Llama-3.2-1B-Instruct-ocr-denoising-en"
+uv run text-cleaning cache_model --model "gemma"
+uv run text-cleaning cache_model --model "llama"
+uv run text-cleaning cache_model --model "minerva"
+uv run text-cleaning cache_model --model_id "ClemensK/gemma-3-1b-it-ocr-denoising-en"
+uv run text-cleaning cache_model --model_id "ClemensK/Llama-3.2-1B-Instruct-ocr-denoising-en"
 
 # Then run the denoising script
 sbatch run-denoising.slurm.sh

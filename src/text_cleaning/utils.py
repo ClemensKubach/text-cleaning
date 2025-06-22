@@ -267,9 +267,11 @@ def merge_datasets(
     logger.info(f"Merged datasets saved to {out_noisy_path} and {out_clean_path}")
 
 
-def cache_model_and_tokenizer(model: Model | None = None, model_id: str | None = None):
+def cache_model_and_tokenizer(model: Model | str | None = None, model_id: str | None = None):
     """Caches the model and tokenizer to be used by LLaMA-Factory offline."""
-    model_id = model.value if model is not None else model_id
+    if model is not None:
+        model = Model(model)
+        model_id = model.value
     if model_id is None:
         raise ValueError("Model ID is required to cache a model")
     logger.info(f"Caching model and tokenizer for {model_id}...")
