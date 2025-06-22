@@ -118,7 +118,7 @@ sbatch run-denoising-finetuning.slurm.sh minerva
 
 Or on the local machine from LLaMA-Factory directory:
 ```bash
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-llama-synthetic-config.json
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-gemma-synthetic-config.json
 ```
 
 Export the model:

@@ -33,5 +33,5 @@
   "eval_strategy": "steps",
   "eval_steps": 100,
   "report_to": "wandb",
-  "run_name": "minerva_synthetic_20250622-122813"
+  "run_name": "minerva_synthetic_20250622-163525"
 }

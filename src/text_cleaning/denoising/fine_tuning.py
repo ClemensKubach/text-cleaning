@@ -108,6 +108,7 @@ class LLaMAFactoryConfigs:
             output_dir=str(self.sft_output_dir_name),  # the path to save LoRA adapters
             logging_steps=10,  # log every 10 steps
             save_steps=1000,  # save checkpoint every 1000 steps
+            overwrite_output_dir=True,
             # train
             per_device_train_batch_size=2,  # the batch size
             gradient_accumulation_steps=4,  # the gradient accumulation steps
@@ -341,13 +342,15 @@ def prepare_fine_tuning(
     models: tuple[Literal["gemma", "llama", "minerva"], ...] = ("gemma", "llama", "minerva"),
     datasets: tuple[Literal["the_vampyre", "synthetic"], ...] = ("the_vampyre", "synthetic"),
     generate_files: bool = False,
+    cache_models: bool = False,
 ) -> None:
     """Prepare the fine-tuning dataset and generate the LLaMA-Factory config file."""
     models_obj = [get_model_from_str(model) for model in models]
     datasets_obj = [get_dataset_from_str(dataset) for dataset in datasets]
 
-    for model in models_obj:
-        cache_model_and_tokenizer(model)
+    if cache_models:
+        for model in models_obj:
+            cache_model_and_tokenizer(model)
 
     for dataset in datasets_obj:
         if generate_files:

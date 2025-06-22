@@ -33,5 +33,5 @@
   "eval_strategy": "steps",
   "eval_steps": 100,
   "report_to": "wandb",
-  "run_name": "minerva_the_vampyre_20250622-122755"
+  "run_name": "minerva_the_vampyre_20250622-163524"
 }

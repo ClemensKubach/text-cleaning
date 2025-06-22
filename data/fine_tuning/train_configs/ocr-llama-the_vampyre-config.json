@@ -30,5 +30,5 @@
   "eval_strategy": "steps",
   "eval_steps": 100,
   "report_to": "wandb",
-  "run_name": "llama_the_vampyre_20250622-122755"
+  "run_name": "llama_the_vampyre_20250622-163524"
 }
