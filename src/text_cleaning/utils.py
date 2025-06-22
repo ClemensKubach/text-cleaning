@@ -148,6 +148,11 @@ def load_model(
                     torch_dtype="auto",  # pick FP16 on GPU if available
                     cache_dir=os.environ.get("HF_HOME"),
                 ).eval()
+                model = torch.compile(
+                    model,
+                    fullgraph=False,
+                    dynamic=True,  # avoid recompiling
+                )
             else:
                 model = AutoModelForCausalLM.from_pretrained(
                     model_name,
