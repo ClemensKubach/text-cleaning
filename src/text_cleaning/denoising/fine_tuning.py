@@ -346,6 +346,9 @@ def prepare_fine_tuning(
     models_obj = [get_model_from_str(model) for model in models]
     datasets_obj = [get_dataset_from_str(dataset) for dataset in datasets]
 
+    for model in models_obj:
+        cache_model_and_tokenizer(model)
+
     for dataset in datasets_obj:
         if generate_files:
             for model in models_obj:
@@ -365,8 +368,6 @@ def prepare_fine_tuning(
             _prepare_ocr_fine_tuning_dataset(
                 dataset=dataset, ocr_file=ocr_file, clean_file=clean_file, test_ratio=test_ratio
             )
-        for model in models_obj:
-            cache_model_and_tokenizer(model)
         # add dataset to LLaMA-Factory dataset_info.json
         lf_dataset_info_path = BASE_DIR / "LLaMA-Factory" / "data" / "dataset_info.json"
         # Read the existing content
