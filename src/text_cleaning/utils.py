@@ -145,14 +145,12 @@ def load_model(
                     model_name,
                     quantization_config=BitsAndBytesConfig(load_in_4bit=True),
                     device_map="auto",  # automatically place on GPU
-                    torch_dtype="auto",  # pick FP16 on GPU if available
                     cache_dir=os.environ.get("HF_HOME"),
                 ).eval()
             else:
                 model = AutoModelForCausalLM.from_pretrained(
                     model_name,
                     device_map="auto",  # automatically place on GPU
-                    torch_dtype="auto",  # pick FP16 on GPU if available
                     cache_dir=os.environ.get("HF_HOME"),
                 ).eval()
         except ValueError:
@@ -160,7 +158,7 @@ def load_model(
     elif model_type == "seq2seq":
         try:
             model = AutoModelForSeq2SeqLM.from_pretrained(
-                model_name, torch_dtype=torch.float16, device_map="auto", cache_dir=os.environ.get("HF_HOME")
+                model_name, device_map="auto", cache_dir=os.environ.get("HF_HOME")
             ).eval()
         except ValueError:
             raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model")
@@ -197,7 +195,6 @@ def load_pipeline(
         pipeline_task,
         model=model,
         tokenizer=tokenizer,
-        torch_dtype=torch.float16,
         device_map="auto",
         return_full_text=False,  # <-- only return the new text
         clean_up_tokenization_spaces=True,
