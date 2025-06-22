@@ -64,4 +64,4 @@ export CUDA_VISIBLE_DEVICES=0
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Run LLaMA-Factory fine-tuning with uv and llamafactory-cli add HF_HOME to the model_name_or_path
-uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json --model_name_or_path="${HF_HOME}/models--google--gemma-3-1b-it"
+uv run --prerelease=allow llamafactory-cli train ../data/fine_tuning/train_configs/ocr-${MODEL}-${DATASET}-config.json ----cache-dir=${HF_HOME}
