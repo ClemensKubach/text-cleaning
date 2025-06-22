@@ -1,9 +1,9 @@
 {
   "model_name_or_path": "google/gemma-3-1b-it",
-  "adapter_name_or_path": "../data/fine_tuning/models/sft_gemma_synthetic",
+  "adapter_name_or_path": "../data/fine_tuning/models/sft_gemma_the_vampyre",
   "template": "gemma",
   "finetuning_type": "lora",
-  "export_dir": "../data/fine_tuning/models/export_gemma_synthetic",
+  "export_dir": "../data/fine_tuning/models/export_gemma_the_vampyre",
   "export_size": 2,
   "export_device": "cpu",
   "export_hub_model_id": "gemma-3-1b-it-ocr-denoising-en"

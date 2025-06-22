@@ -4,13 +4,13 @@
   "do_train": true,
   "finetuning_type": "lora",
   "lora_target": "all",
-  "dataset": "ocr_denoising-the_vampyre",
+  "dataset": "ocr_denoising-synthetic",
   "template": "llama3",
   "cutoff_len": 16000,
   "max_samples": 560000,
   "overwrite_cache": true,
   "preprocessing_num_workers": 16,
-  "output_dir": "../data/fine_tuning/models/sft_llama_the_vampyre",
+  "output_dir": "../data/fine_tuning/models/sft_llama_synthetic",
   "logging_steps": 10,
   "save_steps": 500,
   "plot_loss": true,
@@ -30,5 +30,5 @@
   "eval_strategy": "steps",
   "eval_steps": 100,
   "report_to": "wandb",
-  "run_name": "llama_the_vampyre_20250622-163524"
+  "run_name": "llama_synthetic_20250622-163525"
 }
