@@ -11,6 +11,8 @@ from text_cleaning.utils import load_data, save_data
 import argparse
 from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 import torch
+from torchmetrics.text import WordErrorRate, CharacterErrorRate
+
 
 
 """'tokenizer download for splitting the text on the words properly"""
@@ -155,76 +157,85 @@ def evaluate_ROGUE(clean_text: str, noisy_text: str) -> float:
 """auxillry method to count operations needed to match two strings """
 
 
-def count_all_operations(clean_text: str, noisy_text: str) -> int:
-    i, j = 0, 0
-    ops_count = 0
-    gt_words = clean_text.split()
-    ocr_words = noisy_text.split()
+# def count_all_operations(clean_text: str, noisy_text: str) -> int:
+#     i, j = 0, 0
+#     ops_count = 0
+#     gt_words = clean_text.split()
+#     ocr_words = noisy_text.split()
 
-    while i < len(gt_words) and j < len(ocr_words):
-        gt_word = gt_words[i]
-        ocr_word = ocr_words[j]
+#     while i < len(gt_words) and j < len(ocr_words):
+#         gt_word = gt_words[i]
+#         ocr_word = ocr_words[j]
 
-        direct_dist = Levenshtein.distance(gt_word, ocr_word)
-        merge_dist = float("inf")
-        split_dist = float("inf")
+#         direct_dist = Levenshtein.distance(gt_word, ocr_word)
+#         merge_dist = float("inf")
+#         split_dist = float("inf")
 
-        if len(gt_word) > len(ocr_word) and j + 1 < len(ocr_words):
-            merged_ocr = ocr_word + ocr_words[j + 1]
-            merge_dist = Levenshtein.distance(gt_word, merged_ocr)
 
-        elif len(ocr_word) > len(gt_word) and i + 1 < len(gt_words):
-            merged_gt = gt_word + gt_words[i + 1]
-            split_dist = Levenshtein.distance(merged_gt, ocr_word)
+#         """case for the ocr word being longer than the gt word"""
+#         if len(gt_word) > len(ocr_word) and j + 1 < len(ocr_words):
+#             merged_ocr = ocr_word + ocr_words[j + 1]
+#             merge_dist = Levenshtein.distance(gt_word, merged_ocr)
 
-        if direct_dist <= merge_dist and direct_dist <= split_dist:
-            current_ops = Levenshtein.editops(gt_word, ocr_word)
-            logger.debug(f"{gt_word} {ocr_word}")
-            logger.debug(f"Operations: {len(current_ops)}")
-            logger.debug("")
-            ops_count += len(current_ops)
-            i += 1
-            j += 1
+#         elif len(ocr_word) > len(gt_word) and i + 1 < len(gt_words):
+#             merged_gt = gt_word + gt_words[i + 1]
+#             split_dist = Levenshtein.distance(merged_gt, ocr_word)
 
-        elif merge_dist < split_dist:
-            current_ops = Levenshtein.editops(gt_word, merged_ocr)
-            logger.debug(f"{gt_word} {ocr_word}")
-            logger.debug(f"Operations: {len(current_ops)}")
-            logger.debug("")
-            ops_count += len(current_ops)
-            i += 1
-            j += 2
+#         if direct_dist <= merge_dist and direct_dist <= split_dist:
+#             current_ops = Levenshtein.editops(gt_word, ocr_word)
+#             logger.debug(f"{gt_word} {ocr_word}")
+#             logger.debug(f"Operations: {len(current_ops)}")
+#             logger.debug("")
+#             ops_count += len(current_ops)
+#             i += 1
+#             j += 1
 
-        else:
-            current_ops = Levenshtein.editops(merged_gt, ocr_word)
-            logger.debug(f"{gt_word} {ocr_word}")
-            logger.debug(f"Operations: {len(current_ops)}")
-            logger.debug("")
-            ops_count += len(current_ops)
-            i += 2
-            j += 1
+#         elif merge_dist < split_dist:
+#             current_ops = Levenshtein.editops(gt_word, merged_ocr)
+#             logger.debug(f"{gt_word} {ocr_word}")
+#             logger.debug(f"Operations: {len(current_ops)}")
+#             logger.debug("")
+#             ops_count += len(current_ops)
+#             i += 1
+#             j += 2
 
-    ops_count += sum(len(w) for w in gt_words[i:])  # remaining GT tokens, subtraction
-    ops_count += sum(len(w) for w in ocr_words[j:])  # remaining OCR tokens, subtraction
-    return ops_count
+#         else:
+#             current_ops = Levenshtein.editops(merged_gt, ocr_word)
+#             logger.debug(f"{gt_word} {ocr_word}")
+#             logger.debug(f"Operations: {len(current_ops)}")
+#             logger.debug("")
+#             ops_count += len(current_ops)
+#             i += 2
+#             j += 1
+
+#     ops_count += sum(len(w) for w in gt_words[i:])  # remaining GT tokens, subtraction
+#     ops_count += sum(len(w) for w in ocr_words[j:])  # remaining OCR tokens, subtraction
+#     return ops_count
+
+
+
 
 
 """method to evaluate the CER - error rate in terms of the character operation to character number ratio"""
 
 
 def evaluate_CER(clean_text: str, noisy_text: str) -> float:
-    divisor = len(clean_text)
-    print(divisor)
-    return count_all_operations(clean_text, noisy_text) / divisor
+    # divisor = len(clean_text)
+    # print(divisor)
+    # return count_all_operations(clean_text, noisy_text) / divisor
+    cer = CharacterErrorRate()
+    return cer(noisy_text,clean_text)
 
 
 """method to evaluate the WER - error rate in terms of the character operation to words number ratio"""
 
 
 def evaluate_WER(clean_text: str, noisy_text: str) -> float:
-    tokens = word_tokenize(clean_text)
-    divisor = len(tokens)
-    return count_all_operations(clean_text, noisy_text) / divisor
+    # tokens = word_tokenize(clean_text)
+    # divisor = len(tokens)
+    # return count_all_operations(clean_text, noisy_text) / divisor
+    wer = WordErrorRate()
+    return wer(noisy_text, clean_text)
 
 
 """perplexity will be evaluated, empty for now"""

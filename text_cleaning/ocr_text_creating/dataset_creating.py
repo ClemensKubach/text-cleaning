@@ -6,13 +6,18 @@ from collections import defaultdict
 import random
 import re
 
-'''creating the ocr datasets'''
+'''the functions to perturb the clean text with an error probability distribution precomputed on the real
+examples of the ocr errors'''
 
+'''paths provided for the file 
+clean_json_path path to save the output divided into chunks in the json format
+ocr_json_path path to save the perturbed ocr imitating output divided into alligned chunks in json format 
+text_reading_path - path from which the text '''
 clean_json_path = '/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/clean_otoranto.json'
 ocr_json_path =  '/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/ocr_otoranto.json'
-otoranto_path = '/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/otoranto_castel.txt'
+text_read_path = '/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/otoranto_castel.txt'
 
-# Substitution: (gt, ocr) → prob hardcoded by the probabilities from the big dataset 
+" Substitution: (gt, ocr) → probability distribution emulating the real ocr mistakes probability distirbution " 
 substitution_probs_raw = [
     (('e', 'o'), 0.02855834703760925), (('i', 'I'), 0.023725447043249477), (('i', 'l'), 0.018237838399768197),
       (('a', 'n'), 0.013158316735215694), ((',', ' '), 0.012422875431726163), ((' ', ','), 0.009645893306820582),
@@ -26,7 +31,7 @@ substitution_probs_raw = [
                 (('i', 't'), 0.005004318644045303)
 ]
 
-# Insertion: char → [(inserted_char, prob)]
+" Insertion: char → [(inserted_char, prob)] "
 insertion_probs_raw = [
     (' ', 0.2189837029352008), ('e', 0.06249324557990749), 
     ('t', 0.05445413478580383), ('o', 0.049165423853369646), ('n', 0.04589358276055851),
@@ -35,7 +40,7 @@ insertion_probs_raw = [
     ('.', 0.030107152120347556), ('h', 0.024110577962218476), ('d', 0.020645560454761597)
 ]
 
-# Deletion: char → prob
+" Deletion: char → prob "
 deletion_probs_raw = [
     (' ', 0.14795397005573097), ('e', 0.09363043929585402), ('t', 0.06535782943144715), 
     ('a', 0.056789228043970026), ('n', 0.05484525019615033), ('o', 0.054703698411114915),
@@ -74,13 +79,13 @@ def perturb_chunk(
     while i < len(chunk):
         c = chunk[i]
 
-        # Uniform noise
+        "Uniform noise, the normalization term, uniform noise possibility "
         if random.random() < uniform_noise_prob:
             perturbed.append(random.choice(uniform_noise_charset))
             i += 1
             continue
 
-        # Apply visual pattern noise
+        " Apply visual pattern noise" 
         applied_visual = False
         for pattern, replacement, prob in visual_noise_patterns:
             if chunk[i:i+len(pattern)] == pattern and random.random() < prob:
@@ -91,12 +96,12 @@ def perturb_chunk(
         if applied_visual:
             continue
 
-        # Deletion
+        " Deletion"
         if c in deletion_probs and random.random() < deletion_probs[c]:
             i += 1
             continue
 
-        # Substitution
+        " Substitution" 
         substituted = False
         if c in substitution_probs:
             for wrong_char, prob in substitution_probs[c]:
@@ -107,21 +112,23 @@ def perturb_chunk(
         if not substituted:
             perturbed.append(c)
 
-        # Insertion
+        " Insertion"
         if c in insertion_probs:
             for ins_char, prob in insertion_probs[c]:
                 if random.random() < prob:
                     rand_shift = random.randint(5,15)
+                    "handling the insertion in such way, with the shift otherwise it would be always inserted as"
+                    "the same two consecutive letters : aa for example"
                     if rand_shift <len(perturbed):
                         perturbed = perturbed[:len(perturbed)-rand_shift] + [ins_char] + perturbed[len(perturbed)-rand_shift:]
-                    #perturbed.append(ins_char)
 
-        # Non-alphanumeric junk
+        " Non-alphanumeric  insertion"
         if random.random() < non_alpha_insert_prob:
             perturbed.append(random.choice(non_alpha_chars))
 
         i += 1
 
+    "joining the string to return in proper format"
     return ''.join(perturbed)
 
 
@@ -146,35 +153,36 @@ def generate_ocr_dataset(
     idx = 0
 
     while i < len(text):
+        "random length of the chunk, in the range of the lengths of the chunks in the vampyre"
         chunk_len = random.randint(min_len, max_len)
         approx_end = i + chunk_len
 
         if approx_end >= len(text):
             approx_end = len(text)
 
-        # Define a search window around approx_end
+        "trying to split on the . to do it most naturally"
         window_start = max(i, approx_end - 100)
         window_end = min(len(text), approx_end + 100)
 
-        # Find nearest '.' in the window
+        " Find nearest '.' in the window" 
         nearby_text = text[window_start:window_end]
         dot_positions = [m.start() for m in re.finditer(r'\.', nearby_text)]
 
         if dot_positions:
-            # Choose closest '.' to approx_end
+            " Choose closest '.' to approx_end" 
             closest_dot = min(dot_positions, key=lambda x: abs((window_start + x) - approx_end))
-            end = window_start + closest_dot + 1  # include the dot
+            end = window_start + closest_dot + 1  
         else:
             end = approx_end
 
         chunk = text[i:end]
 
-        # Skip whitespace-only chunks
+
         if not chunk.strip():
             i = end
             continue
 
-        # Store clean and perturbed text
+        "saving the texts to the files in json format"
         clean_json[str(idx)] = chunk
         ocr_json[str(idx)] = perturb_chunk(
             chunk,
@@ -194,7 +202,7 @@ def generate_ocr_dataset(
     return clean_json, ocr_json
 
 
-with open(otoranto_path, 'r') as f:
+with open(text_read_path, 'r') as f:
      input_text = f.read()
      f.close()
 
@@ -205,14 +213,14 @@ clean_json, ocr_json = generate_ocr_dataset(
     substitution_probs=substitution_probs,
     insertion_probs=insertion_probs,
     deletion_probs=deletion_probs,
-    visual_noise_patterns=[('rn', 'm', 0.005), ('cl', 'd', 0.005),('vv','w',0.005)],  # example visual confusions
+    visual_noise_patterns=[('rn', 'm', 0.005), ('cl', 'd', 0.005),('vv','w',0.005)], 
     non_alpha_chars=list("~!$%&*+=?|"),
     non_alpha_insert_prob=0.005,
     uniform_noise_prob=0.005,
     uniform_noise_charset=string.ascii_letters + string.digits + string.punctuation
 )
 
-# Save
+" Saving to the files"
 with open(clean_json_path, "w") as f:
     json.dump(clean_json, f, indent=2)
 with open(ocr_json_path, "w") as f:

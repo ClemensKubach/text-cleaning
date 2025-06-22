@@ -24,23 +24,12 @@ TEXT_PATH = "/workspaces/mnlp_project_2/data/ocr_datasets/eng/"
 CLEAN_TEXT = TEXT_PATH + "the_vampyre_clean.json"
 OCR_TEXT = TEXT_PATH + "the_vampyre_ocr.json"
 
-# def get_len_statistic():
-#     clean_data = load_data(CLEAN_TEXT)
-#     mean = None
-#     stdev = None
-#     elements = []
-#     for k in clean_data:
-#         elements.append(len(clean_data[k]))
-#     mean = sum(elements)/len(elements)
-#     stdev = sum(math.sqrt((mean-element)**2) for element in elements) / (len(elements)-1)
-#     print(f"mean is {mean}")
-#     print(f"stdev is {stdev}")
-#     return mean,stdev
 
 
 
 
-
+"the function responsible for the dividing the clean text into chunks, so that to allign with the ocr text "
+"respective chunk "
 def chunk_clean_text(text, target_len=200):
     chunks = []
     start = 0
@@ -48,7 +37,6 @@ def chunk_clean_text(text, target_len=200):
     toleration_space = target_len //10
     while start < len(text):
         end = start + target_len
-        # Find nearest period before or after end
         j = 0
         k = 0
         while end < len(text) and text[end] != '.' and j <= toleration_dot:
@@ -66,35 +54,18 @@ def chunk_clean_text(text, target_len=200):
     return chunks
 
 
-# def find_best_match_chunk(clean_chunk, ocr_text, start_hint=0, search_window=1500):
-#     """
-#     Find a region in ocr_text that best matches clean_chunk, starting near `start_hint`.
-#     This avoids scanning the full OCR text.
-#     """
-#     # Define a search range around the current point
-#     search_start = max(0, start_hint - search_window // 2)
-#     search_end = min(len(ocr_text), search_start + search_window)
-
-#     search_region = ocr_text[search_start:search_end]
-
-#     matcher = difflib.SequenceMatcher(None, search_region, clean_chunk)
-#     match = matcher.find_longest_match(0, len(search_region), 0, len(clean_chunk))
-
-#     if match.size == 0:
-#         print("no match")
-#         # fallback if no match — just return approximate slice
-#         approx_start = min(len(ocr_text), start_hint)
-#         return ocr_text[approx_start:approx_start + len(clean_chunk)], approx_start + len(clean_chunk)
-
-#     actual_start = search_start + match.a
-#     actual_end = min(len(ocr_text), actual_start + len(clean_chunk))
-#     return ocr_text[actual_start:actual_end], actual_end
 
 
 
 def find_best_match_chunk_by_ratio(clean_chunk, ocr_text, start_hint=0, search_window=1000, stride=5):
     """
     Search for the region in OCR text that is most similar to clean_chunk using similarity ratio.
+    The method is used to allign the chuks, we strive to find the most similar chunks (of the same length)
+    in the predefined size window, 
+    we try to match eaxact chunks with a small stride of 5 change - allowing for some inconsistencies
+    but faciliating the computational speed
+    we do not allign anything if the quality of the text is exceptionally poor < below 0.6 
+    that allowed us to pick approximately 40% of the iterated data
     """
     search_start = max(0, start_hint - search_window // 2)
     search_end = min(len(ocr_text), search_start + search_window)
@@ -133,11 +104,11 @@ def get_ocr_errors(clean, ocr,all_characters_count):
         if tag == 'replace':
             src = clean[i1:i2]
             tgt = ocr[j1:j2]
-            # Align character by character within the replacement span
+        
             for c, o in zip(src, tgt):
                 if c != o:
                     substitutions[(c, o)] += 1
-            # Handle leftover chars (if lengths differ)
+            
             if len(src) > len(tgt):
                 for c in src[len(tgt):]:
                     deletions[c] += 1
@@ -189,24 +160,31 @@ dataset_ocr = []
 dataset_clean = []
 #dataset = load_dataset("PleIAs/Post-OCR-Correction", name="english", split="train[:50]")  # Load a small subset
 
+'''using the biggest aggregated dataset with the ocr content and corrected by the state of the art
+correction algorithms content'''
+"we iterated over the dataset to get ranodm example because the dataset is imbalanced and the data is"
+"in chronological and newspaper type order, and we didnt want to skew the error distribution just by"
+" introducing the  bias, by the certain  font of newspaper, certain epoch etc"
 dataset_iterator = load_dataset("PleIAs/Post-OCR-Correction", name="english", split="train", streaming=True)
 
 
 '''used to randomly pick some fraction of the dataset to use here'''
+"since whole dataser has 30000 training examples it gives around 600 "
 DATASET_FRACTION = 0.02
 # dataset  = []
 for i, row in enumerate(dataset_iterator):
-      if random.random() < DATASET_FRACTION:  # 20% chance
+      if random.random() < DATASET_FRACTION:  
           dataset_ocr.append(row["text"])
           dataset_clean.append(row["corrected_text"])
-#          dataset.append(row)
 
 
-# dataset_ocr = dataset["text"]
-# dataset_clean = dataset["corrected_text"]
+
 
 clean_chunks = []
 ocr_chunks = []
+"""here we perfrom the allignment of the ground truth with the ocr text
+It is not a trivial task unfortunately, due to often times deletion of the input but the ocr
+or introducing many additional characters due to the the blurred words etc"""
 for i in range(len(dataset_clean)):
     clean_chunks_current = chunk_clean_text(dataset_clean[i])
     ocr_pos_current = 0
@@ -229,7 +207,7 @@ for i in range(len(clean_chunks)):
             pass
         else:
             pass
-#     subs, ins, dels = get_ocr_errors(clean_chunk, ocr_chunk)
+
 print(f"ratio of used chunks {good_alligned_chunks}")
 
 
@@ -238,23 +216,23 @@ ins = Counter()
 dels = Counter()
 all_characters_count =  Counter()
 
+"""we iterate over all training examples and aggregate the misteks with the help of the counter """
 for i in range(len(clean_chunks)):
     curr_subs, curr_ins, curr_dels, all_characters_count = analyze_ocr_errors_from_chunks(clean_chunks[i], ocr_chunks[i],all_characters_count)
     subs += curr_subs
     ins += curr_ins
     dels += curr_dels
-    # print("subs")
-    # print(subs)
-    print('\n')
-    print('insertions')
-    print(ins)
-    print('\n')
-    print('deletions')
-    print(dels)
-    print('\n')
-    print('\n')
-    print('\n')
-    print('\n')
+   
+    # print('\n')
+    # print('insertions')
+    # print(ins)
+    # print('\n')
+    # print('deletions')
+    # print(dels)
+    # print('\n')
+    # print('\n')
+    # print('\n')
+    # print('\n')
 
 # dels = {key:val/all_characters_count[key] for key,val in dels.items()}
 # ins = {
@@ -264,6 +242,7 @@ for i in range(len(clean_chunks)):
 
 # subs = {key:val/all_characters_count[key[0]] for key,val in subs.items()}
 
+"""we normalize the mistakes by all mistakes, to see which ones had benn most prevalent ones"""
 sum_dels = sum(dels.values())
 sum_ins = sum(ins.values())
 sum_subs = sum(subs.values())
@@ -296,6 +275,10 @@ print('good alligned chunks used')
 print(good_alligned_chunks)
 
 
+"""we cluster the mistakes to retain the one which are happening with some resonable frequency
+we do not want to replicate the exact error distirbution but rather approximate it, and the errors with
+frequency below a certain threshold could be just considered noise. and we do introduce the noise to the
+distirbution later uniformly """
 common_dels = cluster_mistakes(dels,num_clusters=5,clusters_to_return=3,verbose=False)
 common_dels.sort(key=lambda x: -x[1])
 
@@ -321,6 +304,7 @@ print('\n')
 print('\n')
 
 
+"""saving the output to the files"""
 with open(file_write, "w", encoding="utf-8") as write_file:
     write_file.write("insertion mistakes")
     write_file.write('\n')

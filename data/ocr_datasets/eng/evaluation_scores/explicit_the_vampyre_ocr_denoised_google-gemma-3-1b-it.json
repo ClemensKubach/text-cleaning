@@ -1,3 +1,4 @@
 {
-    "3": "```json\n{\n  \"fidelity\": 4,\n  \"fluency\": 6,\n  \"completeness\": 4,\n  \"no_hallucinations\": 3,\n  \"OCR-improvement\": 5,\n  \"final_score\": 4.4\n}\n```"
+    "3": "```json\n{\n\"fidelity\": 2,\n\"fluency\": 3,\n\"completeness\": 3,\n\"no_hallucinations\": 1,\n\"final_score\": 2.25\n}\n```",
+    "4": "```json\n{\n\"fidelity\": 2,\n\"fluency\": 3,\n\"completeness\": 4,\n\"no_hallucinations\": 1,\n\"final_score\": 2.5\n}\n```"
 }
