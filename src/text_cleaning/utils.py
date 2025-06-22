@@ -146,24 +146,26 @@ def load_model(
                     quantization_config=BitsAndBytesConfig(load_in_4bit=True),
                     device_map="auto",  # automatically place on GPU
                     torch_dtype="auto",  # pick FP16 on GPU if available
+                    cache_dir=os.environ.get("HF_HOME"),
                 ).eval()
             else:
                 model = AutoModelForCausalLM.from_pretrained(
                     model_name,
                     device_map="auto",  # automatically place on GPU
                     torch_dtype="auto",  # pick FP16 on GPU if available
+                    cache_dir=os.environ.get("HF_HOME"),
                 ).eval()
         except ValueError:
             raise ValueError(f"Wrong model type {model_type} for the model {model_name}")
     elif model_type == "seq2seq":
         try:
             model = AutoModelForSeq2SeqLM.from_pretrained(
-                model_name, torch_dtype=torch.float16, device_map="auto"
+                model_name, torch_dtype=torch.float16, device_map="auto", cache_dir=os.environ.get("HF_HOME")
             ).eval()
         except ValueError:
             raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True, cache_dir=os.environ.get("HF_HOME"))
     if model_type == "causal":
         tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer, model_type
@@ -290,8 +292,8 @@ def cache_model_and_tokenizer(model: Model | str | None = None, model_id: str | 
         raise ValueError("Model ID is required to cache a model")
     logger.info(f"Caching model and tokenizer for {model_id}...")
     try:
-        AutoTokenizer.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
         AutoModel.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
+        AutoTokenizer.from_pretrained(model_id, cache_dir=os.environ.get("HF_HOME"))
         logger.info(f"Successfully cached {model_id}.")
         cache_location = os.environ.get("HF_HOME")
         logger.info(
