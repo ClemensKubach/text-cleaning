@@ -63,7 +63,7 @@ class LLaMAFactoryConfigs:
         elif self.model == Model.LLAMA:
             template = "llama3"
             model_id = "Llama-3.2-1B-Instruct-ocr-denoising-en"
-            finetuning_type = "full"
+            finetuning_type = "lora"
         elif self.model == Model.MINERVA:
             template = "llama3"
             model_id = "Minerva-1B-base-v1.0-ocr-denoising-en"
@@ -131,13 +131,8 @@ class LLaMAFactoryConfigs:
             # method
             stage="sft",  # do supervised fine-tuning
             do_train=True,
-            finetuning_type="full",
-            use_badam=True,
-            badam_mode="layer",
-            badam_switch_mode="ascending",
-            badam_switch_interval=50,
-            badam_verbose=2,
-            deepspeed="examples/deepspeed/ds_z3_config.json",
+            finetuning_type="lora",  # use LoRA adapters to save memory
+            lora_target="all",  # attach LoRA adapters to all linear layers
             # dataset
             dataset=self.dataset.value,  # use custom dataset
             template="llama3",  # use llama3 prompt template
@@ -152,13 +147,15 @@ class LLaMAFactoryConfigs:
             plot_loss=True,
             overwrite_output_dir=True,
             # train
-            per_device_train_batch_size=4,
-            gradient_accumulation_steps=8,
-            learning_rate=1e-5,
+            per_device_train_batch_size=2,
+            gradient_accumulation_steps=4,
+            learning_rate=5e-5,
             num_train_epochs=3.0,
             lr_scheduler_type="cosine",
             warmup_ratio=0.05,
-            bf16=True,
+            max_grad_norm=1.0,  # clip gradient norm to 1.0
+            loraplus_lr_ratio=16.0,  # use LoRA+
+            fp16=True,  # use float16 mixed precision training
             ddp_timeout=180000000,
             # eval
             val_size=0.1,
