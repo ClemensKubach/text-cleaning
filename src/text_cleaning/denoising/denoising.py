@@ -323,6 +323,8 @@ def denoise(
     use_sentence_chunks: bool = True,
     num_attempts: int = 1,
     is_finetuned: bool = False,
+    text_pipeline: Pipeline | None = None,
+    tokenizer: AutoTokenizer | None = None,
 ) -> str:
     """
     Denoise OCR text using the chosen model.
@@ -334,11 +336,14 @@ def denoise(
         use_sentence_chunks: If True, processes text sentence by sentence. If False, processes whole text at once.
         num_attempts: Number of denoising attempts for majority voting (default=1).
         is_finetuned: Whether the model is finetuned or not.
+        text_pipeline: The text generation pipeline to use for denoising if given.
+        tokenizer: The tokenizer to use for denoising if given.
 
     Returns:
         The denoised text.
     """
-    text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
+    if text_pipeline is None or tokenizer is None:
+        text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
     text_chunks = _split_text_into_sentences(text, use_sentence_chunks)
 
     denoised_chunks = []
@@ -394,6 +399,7 @@ def denoise_dataset(
         logger.info(f"Using subset of {len(noisy_data)} pages")
 
     denoised_data: dict[int, str] = {}
+    text_pipeline, tokenizer, model_type = load_pipeline(model_name, model_type)
     for i in tqdm(noisy_data):
         noisy_text = noisy_data[i]
         denoised_data[i] = denoise(
@@ -404,6 +410,8 @@ def denoise_dataset(
             use_sentence_chunks=use_sentence_chunks,
             num_attempts=num_attempts,
             is_finetuned=is_finetuned,
+            text_pipeline=text_pipeline,
+            tokenizer=tokenizer,
         )
     denoised_file_path = noisy_data_path.with_name(
         f"{noisy_data_path.stem}_denoised_{model_name_to_path_compatible(model_name)}{noisy_data_path.suffix}"
