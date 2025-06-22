@@ -28,9 +28,7 @@ python -c "import torch, sys; print('\n'.join(f'CUDA Device {i}: {torch.cuda.get
 
 
 # (optional) point HF and W&B to local caches if on a no‐internet cluster
-export HF_HOME=~/hf_cache
-export HF_DATASETS_CACHE=~/hf_cache
-export HUGGINGFACE_HUB_CACHE=~/hf_cache
+export HF_HOME=$SCRATCH/hf_cache
 export FORCE_TORCHRUN=1
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_OFFLINE=1

@@ -48,7 +48,13 @@ text-cleaning denoise --model_name="ClemensK/Minerva-1B-base-v1.0-ocr-denoising-
 ```
 
 You can also use the `run-denoising.slurm.sh` script to run the denoising on the HPC:
+
+When running for a non-default model like a fine-tuned model, you need to cache the model and tokenizer first.
 ```bash
+text-cleaning cache_model --model_id "ClemensK/gemma-3-1b-it-ocr-denoising-en"
+text-cleaning cache_model --model_id "ClemensK/Llama-3.2-1B-Instruct-ocr-denoising-en"
+
+# Then run the denoising script
 sbatch run-denoising.slurm.sh
 ```
 
@@ -79,7 +85,7 @@ git clone --depth 1 --branch no-processor-fallback --single-branch https://githu
 
 Set important environment variables (when only local machine (not HPC), they can be set in the .env file):
 ```bash
-export HF_HOME=~/hf_cache
+export HF_HOME=$SCRATCH/hf_cache  # for the LEONARDO HPC
 export WANDB_API_KEY=<your_api_key>
 ```
 
