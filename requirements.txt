@@ -1,6 +1,6 @@
-torch>=2.2.1
-transformers>=4.38.2
-accelerate>=0.27.2
+torch
+transformers
+accelerate
 tqdm>=4.67.1
 levenshtein>=0.27.1
 scikit-learn>=1.7.0
