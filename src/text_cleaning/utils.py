@@ -148,11 +148,6 @@ def load_model(
                     torch_dtype="auto",  # pick FP16 on GPU if available
                     cache_dir=os.environ.get("HF_HOME"),
                 ).eval()
-                model = torch.compile(
-                    model,
-                    fullgraph=False,
-                    dynamic=True,  # avoid recompiling
-                )
             else:
                 model = AutoModelForCausalLM.from_pretrained(
                     model_name,
@@ -170,6 +165,7 @@ def load_model(
         except ValueError:
             raise ValueError(f"Model {model_name} is neither a causal LM nor a seq2seq model")
 
+    model = torch.compile(model, fullgraph=False, dynamic=True)  # avoid recompiling
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True, cache_dir=os.environ.get("HF_HOME"))
     if model_type == "causal":
         tokenizer.pad_token = tokenizer.eos_token
