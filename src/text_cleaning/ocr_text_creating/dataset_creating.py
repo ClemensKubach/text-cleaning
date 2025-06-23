@@ -9,7 +9,7 @@ import re
 
 clean_json_path = "/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/clean_otoranto.json"
 ocr_json_path = "/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/ocr_otoranto.json"
-otoranto_path = "/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/otoranto_castel.txt"
+text_path = "/workspaces/mnlp_project_2/text_cleaning/ocr_text_creating/otoranto_castel.txt"
 
 # Substitution: (gt, ocr) → prob hardcoded by the probabilities from the big dataset
 substitution_probs_raw = [
@@ -43,7 +43,7 @@ substitution_probs_raw = [
     (("i", "t"), 0.005004318644045303),
 ]
 
-# Insertion: char → [(inserted_char, prob)]
+" Insertion: char → [(inserted_char, prob)] "
 insertion_probs_raw = [
     (" ", 0.2189837029352008),
     ("e", 0.06249324557990749),
@@ -60,7 +60,7 @@ insertion_probs_raw = [
     ("d", 0.020645560454761597),
 ]
 
-# Deletion: char → prob
+" Deletion: char → prob "
 deletion_probs_raw = [
     (" ", 0.14795397005573097),
     ("e", 0.09363043929585402),
@@ -105,13 +105,13 @@ def perturb_chunk(
     while i < len(chunk):
         c = chunk[i]
 
-        # Uniform noise
+        "Uniform noise, the normalization term, uniform noise possibility "
         if random.random() < uniform_noise_prob:
             perturbed.append(random.choice(uniform_noise_charset))
             i += 1
             continue
 
-        # Apply visual pattern noise
+        " Apply visual pattern noise" 
         applied_visual = False
         for pattern, replacement, prob in visual_noise_patterns:
             if chunk[i : i + len(pattern)] == pattern and random.random() < prob:
@@ -122,12 +122,12 @@ def perturb_chunk(
         if applied_visual:
             continue
 
-        # Deletion
+        " Deletion"
         if c in deletion_probs and random.random() < deletion_probs[c]:
             i += 1
             continue
 
-        # Substitution
+        " Substitution" 
         substituted = False
         if c in substitution_probs:
             for wrong_char, prob in substitution_probs[c]:
@@ -138,7 +138,7 @@ def perturb_chunk(
         if not substituted:
             perturbed.append(c)
 
-        # Insertion
+        " Insertion"
         if c in insertion_probs:
             for ins_char, prob in insertion_probs[c]:
                 if random.random() < prob:
@@ -151,7 +151,7 @@ def perturb_chunk(
                         )
                     # perturbed.append(ins_char)
 
-        # Non-alphanumeric junk
+        " Non-alphanumeric  insertion"
         if random.random() < non_alpha_insert_prob:
             perturbed.append(random.choice(non_alpha_chars))
 
@@ -180,35 +180,36 @@ def generate_ocr_dataset(
     idx = 0
 
     while i < len(text):
+        "random length of the chunk, in the range of the lengths of the chunks in the vampyre"
         chunk_len = random.randint(min_len, max_len)
         approx_end = i + chunk_len
 
         if approx_end >= len(text):
             approx_end = len(text)
 
-        # Define a search window around approx_end
+        "trying to split on the . to do it most naturally"
         window_start = max(i, approx_end - 100)
         window_end = min(len(text), approx_end + 100)
 
-        # Find nearest '.' in the window
+        " Find nearest '.' in the window" 
         nearby_text = text[window_start:window_end]
         dot_positions = [m.start() for m in re.finditer(r"\.", nearby_text)]
 
         if dot_positions:
-            # Choose closest '.' to approx_end
+            " Choose closest '.' to approx_end" 
             closest_dot = min(dot_positions, key=lambda x: abs((window_start + x) - approx_end))
-            end = window_start + closest_dot + 1  # include the dot
+            end = window_start + closest_dot + 1  
         else:
             end = approx_end
 
         chunk = text[i:end]
 
-        # Skip whitespace-only chunks
+
         if not chunk.strip():
             i = end
             continue
 
-        # Store clean and perturbed text
+        "saving the texts to the files in json format"
         clean_json[str(idx)] = chunk
         ocr_json[str(idx)] = perturb_chunk(
             chunk,
@@ -228,7 +229,7 @@ def generate_ocr_dataset(
     return clean_json, ocr_json
 
 
-with open(otoranto_path, "r") as f:
+with open(text_path, "r") as f:
     input_text = f.read()
     f.close()
 
@@ -246,7 +247,7 @@ clean_json, ocr_json = generate_ocr_dataset(
     uniform_noise_charset=string.ascii_letters + string.digits + string.punctuation,
 )
 
-# Save
+" Saving to the files"
 with open(clean_json_path, "w") as f:
     json.dump(clean_json, f, indent=2)
 with open(ocr_json_path, "w") as f:
