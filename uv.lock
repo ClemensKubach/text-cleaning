@@ -2482,7 +2482,7 @@ requires-dist = [
     { name = "jiwer", specifier = ">=4.0.0" },
     { name = "levenshtein", specifier = ">=0.27.1" },
     { name = "nltk", specifier = ">=3.9.1" },
-    { name = "protobuf", specifier = ">=6.31.1" },
+    { name = "protobuf" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "rouge-score", specifier = ">=0.1.2" },
     { name = "scikit-learn", specifier = ">=1.7.0" },

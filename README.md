@@ -9,13 +9,8 @@ Text denoising
    uv pip install -e .
    ```
 4. Set environment variable `HF_TOKEN` for accessing Huggingface.
-5. Set environment variable `GEMINI_API_TOKEN` for accessing the Gemini API for the `eval-gemini` command.
+5. Set environment variable `GEMINI_API_TOKEN` for accessing the Gemini API for evaluation with gemini as a judge.
 
-Now you can run the program from the command line, for example:
-- Denoise text: `text-cleaning denoise --model_name <model> --model_type <type>`
-- Evaluate with classic metrics: `text-cleaning eval-classic --metric <metric_name>`
-- Evaluate with Gemini as a judge: `text-cleaning eval-gemini --evaluation_technique <technique> --input_names <files>`
-- Prepare for fine-tuning: `text-cleaning fine-tune`
 
 ## Examples
 
