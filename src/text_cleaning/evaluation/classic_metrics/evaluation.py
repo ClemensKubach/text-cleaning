@@ -6,18 +6,16 @@ from nltk.tokenize import word_tokenize
 from rouge_score import rouge_scorer
 from tqdm import tqdm
 import Levenshtein
-from text_cleaning.constants import DATA_DIR
-from text_cleaning.utils import load_data, save_data
+from src.text_cleaning.constants import DATA_DIR, DENOISED_DIR
+from src.text_cleaning.utils import load_data, save_data
 import argparse
 from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 import torch
-<<<<<<< HEAD:text_cleaning/evaluation/classic_metrics/evaluation.py
-from torchmetrics.text import WordErrorRate, CharacterErrorRate
 
-=======
+
 from dotenv import load_dotenv
-from text_cleaning.utils import setup_logging
->>>>>>> 76fc3b5241c602b0c7da1f5bc345aaeeed3672b3:src/text_cleaning/evaluation/classic_metrics/evaluation.py
+from src.text_cleaning.utils import setup_logging
+from evaluate import load
 
 
 """'tokenizer download for splitting the text on the words properly"""
@@ -110,10 +108,10 @@ def evaluate_letter_precision(clean_text: str, noisy_text: str) -> float:
 terms of number of operations in the  edit distance """
 
 
-def evaluate_improvement(clean_text: str, ocr_text: str, denoised_text: str) -> float:
-    return (count_all_operations(clean_text, ocr_text) - count_all_operations(clean_text, denoised_text)) / len(
-        clean_text
-    )
+# def evaluate_improvement(clean_text: str, ocr_text: str, denoised_text: str) -> float:
+#     return (count_all_operations(clean_text, ocr_text) - count_all_operations(clean_text, denoised_text)) / len(
+#         clean_text
+#     )
 
 
 """the evaluation of the improvement between two terms in the of the choosen metric """
@@ -159,64 +157,65 @@ def evaluate_ROGUE(clean_text: str, noisy_text: str) -> float:
     return dict_to_return
 
 
-"""auxillry method to count operations needed to match two strings """
+# def evaluate_all(clean_text: str, noisy_text: str) -> dict:
+#     # Compute ROUGE-1
+#     scorer = rouge_scorer.RougeScorer(["rouge1"], use_stemmer=True)
+#     scores = scorer.score(clean_text, noisy_text)
+#     prec = scores["rouge1"].precision
+#     rec = scores["rouge1"].recall
+#     f1 = scores["rouge1"].fmeasure
+#     dict_to_return = {"precision": prec, "recall": rec, "f1": f1}
 
+#     # Load CER and WER metrics from Hugging Face `evaluate`
+#     cer = load("cer")
+#     wer = load("wer")
 
-# def count_all_operations(clean_text: str, noisy_text: str) -> int:
-#     i, j = 0, 0
-#     ops_count = 0
-#     gt_words = clean_text.split()
-#     ocr_words = noisy_text.split()
+#     # Evaluate
+#     cer_score = cer.compute(predictions=[noisy_text], references=[clean_text])
+#     wer_score = wer.compute(predictions=[noisy_text], references=[clean_text])
 
-#     while i < len(gt_words) and j < len(ocr_words):
-#         gt_word = gt_words[i]
-#         ocr_word = ocr_words[j]
+#     # Add to results dictionary
+#     dict_to_return.update({"cer": cer_score, "wer": wer_score})
 
-#         direct_dist = Levenshtein.distance(gt_word, ocr_word)
-#         merge_dist = float("inf")
-#         split_dist = float("inf")
+#     # Optional debug print
+#     print(dict_to_return)
 
+#     return dict_to_return
 
-#         """case for the ocr word being longer than the gt word"""
-#         if len(gt_word) > len(ocr_word) and j + 1 < len(ocr_words):
-#             merged_ocr = ocr_word + ocr_words[j + 1]
-#             merge_dist = Levenshtein.distance(gt_word, merged_ocr)
+def evaluate_all(clean_text: str, noisy_text: str) -> dict:
+    """Evaluate noisy text against clean reference using ROUGE-1, CER, and WER metrics.
+    
+    Args:
+        clean_text: Ground truth reference text.
+        noisy_text: OCR output or denoised text to evaluate.
+    
+    Returns:
+        Dictionary with precision, recall, F1 (ROUGE-1), CER, and WER scores.
+    """
+    # Initialize metrics
+    scorer = rouge_scorer.RougeScorer(["rouge1"], use_stemmer=True)
+    cer_metric = load("cer")
+    wer_metric = load("wer")
 
-#         elif len(ocr_word) > len(gt_word) and i + 1 < len(gt_words):
-#             merged_gt = gt_word + gt_words[i + 1]
-#             split_dist = Levenshtein.distance(merged_gt, ocr_word)
+    # Compute ROUGE-1 (handles empty strings)
+    scores = scorer.score(target=clean_text, prediction=noisy_text)
+    rouge1 = scores["rouge1"]
+    length_clean = len(clean_text)
+    length_ocr = len(noisy_text)
+    
+    # Compute CER/WER (wrap in lists as required by HF evaluate)
+    cer_score = cer_metric.compute(predictions=[noisy_text], references=[clean_text])
+    wer_score = wer_metric.compute(predictions=[noisy_text], references=[clean_text])
 
-#         if direct_dist <= merge_dist and direct_dist <= split_dist:
-#             current_ops = Levenshtein.editops(gt_word, ocr_word)
-#             logger.debug(f"{gt_word} {ocr_word}")
-#             logger.debug(f"Operations: {len(current_ops)}")
-#             logger.debug("")
-#             ops_count += len(current_ops)
-#             i += 1
-#             j += 1
-
-#         elif merge_dist < split_dist:
-#             current_ops = Levenshtein.editops(gt_word, merged_ocr)
-#             logger.debug(f"{gt_word} {ocr_word}")
-#             logger.debug(f"Operations: {len(current_ops)}")
-#             logger.debug("")
-#             ops_count += len(current_ops)
-#             i += 1
-#             j += 2
-
-#         else:
-#             current_ops = Levenshtein.editops(merged_gt, ocr_word)
-#             logger.debug(f"{gt_word} {ocr_word}")
-#             logger.debug(f"Operations: {len(current_ops)}")
-#             logger.debug("")
-#             ops_count += len(current_ops)
-#             i += 2
-#             j += 1
-
-#     ops_count += sum(len(w) for w in gt_words[i:])  # remaining GT tokens, subtraction
-#     ops_count += sum(len(w) for w in ocr_words[j:])  # remaining OCR tokens, subtraction
-#     return ops_count
-
+    return {
+        "unigram_precision": rouge1.precision,
+        "unigram_recall": rouge1.recall,
+        "unigram_f1": rouge1.fmeasure,
+        "cer": cer_score,
+        "wer": wer_score,
+        "length_clean":length_clean,
+        "length_ocr":length_ocr
+    }
 
 
 
@@ -251,7 +250,7 @@ def evaluate_WER(clean_text: str, noisy_text: str) -> float:
 
 def evaluate_dataset(
     evaluation_method: Callable[[str, str], float],
-    denoised_data_path: Path,
+    denoised_data_name: str,
     noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     cleaned_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json",
     evaluation_task: str = "single",
@@ -266,6 +265,7 @@ def evaluate_dataset(
     Returns:
         The scores.
     """
+    denoised_data_path = DENOISED_DIR / denoised_data_name
     noisy_data = load_data(noisy_data_path)
     logger.info(f"Loaded noisy data from {noisy_data_path}")
     clean_data = load_data(cleaned_data_path)
@@ -284,7 +284,12 @@ def evaluate_dataset(
         elif evaluation_task == "comparative":
             score = evaluate_metric_improvement(clean_text, noisy_text, denoised_text, evaluation_method)
             scores[i] = score
-    scores_file_path = denoised_data_path.with_name(f"{noisy_data_path.stem}_scores{noisy_data_path.suffix}")
+    #scores_file_path = denoised_data_path.with_name(f"{noisy_data_path.stem}_scores{noisy_data_path.suffix}")
+    #scores_file_path = "/workspaces/mnlp_project_2/data/evaluations/classic_evaluations/"
+    model_identifier = denoised_data_name.split('/')[-1]
+    scores_file_path  = DATA_DIR / "evaluation_scores" / "classic_evaluations"/ model_identifier
+    
+    # scores_file_path += model_identifier
     save_data(scores_file_path, scores)
     logger.info(f"Scores saved to {scores_file_path}")
     return scores, scores_file_path
@@ -298,8 +303,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--metric",
         type=str,
-        default="CER",
-        choices=["CER", "WER", "BLUE", "ROGUE", "LP"],
+        default="ALL",
+        choices=["CER", "WER", "BLUE", "ROGUE", "LP","COMPREHENSIVE","ALL"],
         help="Evaluation metric to use",
     )
     parser.add_argument(
@@ -309,9 +314,16 @@ if __name__ == "__main__":
         choices=["single", "comparative"],
         help="Whether to evaluate denoised output against the clean text, or compare denoised and noisy output ",
     )
+
     parser.add_argument(
-        "--model_path", type=str, required=False, help="path/name of the model to evaluate the perplexity score on"
+        "--denoised_data_name",
+        type=str,
+        required=True,
+        help="the path to the denoised output",
     )
+    
+
+
     args = parser.parse_args()
 
     metric_map = {
@@ -320,16 +332,18 @@ if __name__ == "__main__":
         "ROGUE": evaluate_ROGUE,
         "LP": evaluate_letter_precision,
         "PERPLEXITY": evaluate_perplexity,
+        "ALL" : evaluate_all
     }
 
     evaluation_method = metric_map[args.metric]
     evaluation_task = args.task
-    model_path = args.model_path
+    denoised_data_name = args.denoised_data_name
+    # model_path = args.model_path
 
-    if model_path:
-        set_global_var(model_path)
+    # if model_path:
+    #     set_global_var(model_path)
 
-    denoised_data_path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json"
+    # denoised_data_path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json"
     evaluate_dataset(
-        evaluation_method=evaluation_method, denoised_data_path=denoised_data_path, evaluation_task=evaluation_task
+        evaluation_method=evaluation_method, denoised_data_name=denoised_data_name, evaluation_task=evaluation_task
     )

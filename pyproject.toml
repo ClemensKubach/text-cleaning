@@ -20,6 +20,9 @@ dependencies = [
     "huggingface-hub>=0.32.4",
     "strenum>=0.4.15",
     "python-dotenv>=1.1.0",
+    "evaluate>=0.4.4",
+    "jiwer>=4.0.0",
+    "seaborn>=0.13.2",
 ]
 
 [dependency-groups]

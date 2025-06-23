@@ -19,7 +19,7 @@ from transformers import (
 from transformers.pipelines import pipeline, Pipeline
 from transformers.utils.quantization_config import BitsAndBytesConfig
 
-from text_cleaning.constants import (
+from src.text_cleaning.constants import (
     DATA_DIR,
     IN_COLAB,
     SYNTHETIC_CLEAN_DATASET_PATH,

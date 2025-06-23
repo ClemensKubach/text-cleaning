@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 LOG_DIR = BASE_DIR / "logs"
 WANDB_DIR = BASE_DIR / "wandb"
+DENOISED_DIR = BASE_DIR / "final_denoised"
 
 SYNTHETIC_OCR_DATASET_PATH = DATA_DIR / "ocr_datasets" / "eng" / "synthetic_ocr.json"
 SYNTHETIC_CLEAN_DATASET_PATH = DATA_DIR / "ocr_datasets" / "eng" / "synthetic_clean.json"

@@ -1,0 +1,434 @@
+{
+    "0": {
+        "unigram_precision": 0.5,
+        "unigram_recall": 0.5,
+        "unigram_f1": 0.5,
+        "cer": 0.6666666666666666,
+        "wer": 1.0,
+        "length_clean": 12,
+        "length_ocr": 12
+    },
+    "1": {
+        "unigram_precision": 1.0,
+        "unigram_recall": 1.0,
+        "unigram_f1": 1.0,
+        "cer": 0.14285714285714285,
+        "wer": 0.5,
+        "length_clean": 7,
+        "length_ocr": 7
+    },
+    "2": {
+        "unigram_precision": 0.0,
+        "unigram_recall": 0.0,
+        "unigram_f1": 0.0,
+        "cer": 1.0,
+        "wer": 1.5,
+        "length_clean": 24,
+        "length_ocr": 29
+    },
+    "3": {
+        "unigram_precision": 0.9101123595505618,
+        "unigram_recall": 0.8663101604278075,
+        "unigram_f1": 0.8876712328767122,
+        "cer": 0.1359927470534905,
+        "wer": 0.1891891891891892,
+        "length_clean": 1103,
+        "length_ocr": 1064
+    },
+    "4": {
+        "unigram_precision": 0.9017094017094017,
+        "unigram_recall": 0.7152542372881356,
+        "unigram_f1": 0.7977315689981098,
+        "cer": 0.2795252225519288,
+        "wer": 0.3698630136986301,
+        "length_clean": 1685,
+        "length_ocr": 1333
+    },
+    "5": {
+        "unigram_precision": 0.8571428571428571,
+        "unigram_recall": 0.9,
+        "unigram_f1": 0.8780487804878048,
+        "cer": 0.07407407407407407,
+        "wer": 0.2,
+        "length_clean": 108,
+        "length_ocr": 112
+    },
+    "6": {
+        "unigram_precision": 0.0,
+        "unigram_recall": 0.0,
+        "unigram_f1": 0.0,
+        "cer": 0.5714285714285714,
+        "wer": 1.0,
+        "length_clean": 14,
+        "length_ocr": 15
+    },
+    "7": {
+        "unigram_precision": 0.813953488372093,
+        "unigram_recall": 0.3684210526315789,
+        "unigram_f1": 0.5072463768115942,
+        "cer": 0.599647266313933,
+        "wer": 0.6881720430107527,
+        "length_clean": 567,
+        "length_ocr": 252
+    },
+    "8": {
+        "unigram_precision": 0.6,
+        "unigram_recall": 0.26146788990825687,
+        "unigram_f1": 0.3642172523961661,
+        "cer": 0.6566780821917808,
+        "wer": 0.8104265402843602,
+        "length_clean": 1168,
+        "length_ocr": 521
+    },
+    "9": {
+        "unigram_precision": 0.9041095890410958,
+        "unigram_recall": 0.4782608695652174,
+        "unigram_f1": 0.6255924170616114,
+        "cer": 0.48964677222898906,
+        "wer": 0.5869565217391305,
+        "length_clean": 821,
+        "length_ocr": 448
+    },
+    "10": {
+        "unigram_precision": 0.6666666666666666,
+        "unigram_recall": 0.056338028169014086,
+        "unigram_f1": 0.1038961038961039,
+        "cer": 0.9013452914798207,
+        "wer": 0.9859154929577465,
+        "length_clean": 446,
+        "length_ocr": 54
+    },
+    "11": {
+        "unigram_precision": 0.5,
+        "unigram_recall": 0.5,
+        "unigram_f1": 0.5,
+        "cer": 0.6666666666666666,
+        "wer": 1.0,
+        "length_clean": 12,
+        "length_ocr": 12
+    },
+    "12": {
+        "unigram_precision": 0.907563025210084,
+        "unigram_recall": 0.7517401392111369,
+        "unigram_f1": 0.8223350253807106,
+        "cer": 0.24180837826627954,
+        "wer": 0.3270588235294118,
+        "length_clean": 2411,
+        "length_ocr": 2016
+    },
+    "13": {
+        "unigram_precision": 0.9076923076923077,
+        "unigram_recall": 0.8625730994152047,
+        "unigram_f1": 0.8845577211394303,
+        "cer": 0.12883744338198289,
+        "wer": 0.21114369501466276,
+        "length_clean": 1987,
+        "length_ocr": 1915
+    },
+    "14": {
+        "unigram_precision": 0.8954703832752613,
+        "unigram_recall": 0.8954703832752613,
+        "unigram_f1": 0.8954703832752613,
+        "cer": 0.11261792452830188,
+        "wer": 0.18815331010452963,
+        "length_clean": 1696,
+        "length_ocr": 1657
+    },
+    "15": {
+        "unigram_precision": 0.903114186851211,
+        "unigram_recall": 0.8656716417910447,
+        "unigram_f1": 0.8839966130397967,
+        "cer": 0.16235632183908047,
+        "wer": 0.226890756302521,
+        "length_clean": 3480,
+        "length_ocr": 3309
+    },
+    "16": {
+        "unigram_precision": 0.9057591623036649,
+        "unigram_recall": 0.7424892703862661,
+        "unigram_f1": 0.8160377358490566,
+        "cer": 0.2580414581844174,
+        "wer": 0.31759656652360513,
+        "length_clean": 1399,
+        "length_ocr": 1155
+    },
+    "17": {
+        "unigram_precision": 0.9119718309859155,
+        "unigram_recall": 0.8381877022653722,
+        "unigram_f1": 0.8735244519392918,
+        "cer": 0.18390162101732813,
+        "wer": 0.23778501628664495,
+        "length_clean": 1789,
+        "length_ocr": 1637
+    },
+    "18": {
+        "unigram_precision": 0.9390243902439024,
+        "unigram_recall": 0.5904907975460123,
+        "unigram_f1": 0.7250470809792844,
+        "cer": 0.4159978598180845,
+        "wer": 0.462015503875969,
+        "length_clean": 3738,
+        "length_ocr": 2363
+    },
+    "19": {
+        "unigram_precision": 0.907051282051282,
+        "unigram_recall": 0.7971830985915493,
+        "unigram_f1": 0.848575712143928,
+        "cer": 0.1849246231155779,
+        "wer": 0.23943661971830985,
+        "length_clean": 1990,
+        "length_ocr": 1764
+    },
+    "20": {
+        "unigram_precision": 0.8008130081300813,
+        "unigram_recall": 0.6888111888111889,
+        "unigram_f1": 0.7406015037593985,
+        "cer": 0.33971690258118237,
+        "wer": 0.43416370106761565,
+        "length_clean": 4804,
+        "length_ocr": 4294
+    },
+    "21": {
+        "unigram_precision": 0.8608695652173913,
+        "unigram_recall": 0.6851211072664359,
+        "unigram_f1": 0.7630057803468208,
+        "cer": 0.31509320505111243,
+        "wer": 0.4090909090909091,
+        "length_clean": 1663,
+        "length_ocr": 1329
+    },
+    "22": {
+        "unigram_precision": 0.8990825688073395,
+        "unigram_recall": 0.7855711422845691,
+        "unigram_f1": 0.8385026737967914,
+        "cer": 0.20508295093540416,
+        "wer": 0.31983805668016196,
+        "length_clean": 2833,
+        "length_ocr": 2528
+    },
+    "23": {
+        "unigram_precision": 0.9416666666666667,
+        "unigram_recall": 0.36451612903225805,
+        "unigram_f1": 0.5255813953488372,
+        "cer": 0.6175417661097852,
+        "wer": 0.660958904109589,
+        "length_clean": 1676,
+        "length_ocr": 678
+    },
+    "24": {
+        "unigram_precision": 0.91,
+        "unigram_recall": 0.8792270531400966,
+        "unigram_f1": 0.8943488943488944,
+        "cer": 0.10526315789473684,
+        "wer": 0.18357487922705315,
+        "length_clean": 1121,
+        "length_ocr": 1097
+    },
+    "25": {
+        "unigram_precision": 0.9154228855721394,
+        "unigram_recall": 0.847926267281106,
+        "unigram_f1": 0.8803827751196173,
+        "cer": 0.14020950846091862,
+        "wer": 0.205607476635514,
+        "length_clean": 1241,
+        "length_ocr": 1137
+    },
+    "26": {
+        "unigram_precision": 0.925,
+        "unigram_recall": 0.8131868131868132,
+        "unigram_f1": 0.8654970760233918,
+        "cer": 0.20925553319919518,
+        "wer": 0.28888888888888886,
+        "length_clean": 994,
+        "length_ocr": 864
+    },
+    "27": {
+        "unigram_precision": 0.8731343283582089,
+        "unigram_recall": 0.752411575562701,
+        "unigram_f1": 0.8082901554404145,
+        "cer": 0.2389431361286617,
+        "wer": 0.32894736842105265,
+        "length_clean": 1741,
+        "length_ocr": 1540
+    },
+    "28": {
+        "unigram_precision": 0.9264705882352942,
+        "unigram_recall": 0.7325581395348837,
+        "unigram_f1": 0.8181818181818182,
+        "cer": 0.2835696413678065,
+        "wer": 0.3701923076923077,
+        "length_clean": 2398,
+        "length_ocr": 1897
+    },
+    "29": {
+        "unigram_precision": 0.9093406593406593,
+        "unigram_recall": 0.7505668934240363,
+        "unigram_f1": 0.8223602484472049,
+        "cer": 0.3031893419459023,
+        "wer": 0.4114942528735632,
+        "length_clean": 2477,
+        "length_ocr": 2080
+    },
+    "30": {
+        "unigram_precision": 0.9313725490196079,
+        "unigram_recall": 0.8189655172413793,
+        "unigram_f1": 0.871559633027523,
+        "cer": 0.16300227445034116,
+        "wer": 0.25217391304347825,
+        "length_clean": 1319,
+        "length_ocr": 1170
+    },
+    "31": {
+        "unigram_precision": 0.8994413407821229,
+        "unigram_recall": 0.7970297029702971,
+        "unigram_f1": 0.8451443569553806,
+        "cer": 0.19320214669051877,
+        "wer": 0.271356783919598,
+        "length_clean": 2236,
+        "length_ocr": 2001
+    },
+    "32": {
+        "unigram_precision": 0.9105691056910569,
+        "unigram_recall": 0.4745762711864407,
+        "unigram_f1": 0.6239554317548747,
+        "cer": 0.5304548959136469,
+        "wer": 0.5982532751091703,
+        "length_clean": 1297,
+        "length_ocr": 681
+    },
+    "33": {
+        "unigram_precision": 0.9177215189873418,
+        "unigram_recall": 0.830945558739255,
+        "unigram_f1": 0.8721804511278196,
+        "cer": 0.19543805080352514,
+        "wer": 0.2622478386167147,
+        "length_clean": 1929,
+        "length_ocr": 1764
+    },
+    "34": {
+        "unigram_precision": 0.8837209302325582,
+        "unigram_recall": 0.8636363636363636,
+        "unigram_f1": 0.8735632183908046,
+        "cer": 0.10526315789473684,
+        "wer": 0.1951219512195122,
+        "length_clean": 266,
+        "length_ocr": 267
+    },
+    "35": {
+        "unigram_precision": 0.7333333333333333,
+        "unigram_recall": 0.7333333333333333,
+        "unigram_f1": 0.7333333333333333,
+        "cer": 0.26011560693641617,
+        "wer": 0.3448275862068966,
+        "length_clean": 173,
+        "length_ocr": 168
+    },
+    "36": {
+        "unigram_precision": 0.061452513966480445,
+        "unigram_recall": 0.6470588235294118,
+        "unigram_f1": 0.11224489795918367,
+        "cer": 10.4,
+        "wer": 10.875,
+        "length_clean": 95,
+        "length_ocr": 1017
+    },
+    "37": {
+        "unigram_precision": 0.049019607843137254,
+        "unigram_recall": 0.7142857142857143,
+        "unigram_f1": 0.09174311926605504,
+        "cer": 15.5,
+        "wer": 14.833333333333334,
+        "length_clean": 38,
+        "length_ocr": 601
+    },
+    "38": {
+        "unigram_precision": 1.0,
+        "unigram_recall": 1.0,
+        "unigram_f1": 1.0,
+        "cer": 0.021739130434782608,
+        "wer": 0.11764705882352941,
+        "length_clean": 92,
+        "length_ocr": 90
+    },
+    "39": {
+        "unigram_precision": 0.9049429657794676,
+        "unigram_recall": 0.8469750889679716,
+        "unigram_f1": 0.8749999999999999,
+        "cer": 0.14912280701754385,
+        "wer": 0.2527075812274368,
+        "length_clean": 1482,
+        "length_ocr": 1392
+    },
+    "40": {
+        "unigram_precision": 0.875,
+        "unigram_recall": 0.74375,
+        "unigram_f1": 0.8040540540540541,
+        "cer": 0.3151515151515151,
+        "wer": 0.44039735099337746,
+        "length_clean": 1815,
+        "length_ocr": 1530
+    },
+    "41": {
+        "unigram_precision": 0.9663865546218487,
+        "unigram_recall": 0.9745762711864406,
+        "unigram_f1": 0.970464135021097,
+        "cer": 0.03820598006644518,
+        "wer": 0.13675213675213677,
+        "length_clean": 602,
+        "length_ocr": 603
+    },
+    "42": {
+        "unigram_precision": 0.8571428571428571,
+        "unigram_recall": 0.7878787878787878,
+        "unigram_f1": 0.8210526315789474,
+        "cer": 0.17940199335548174,
+        "wer": 0.30927835051546393,
+        "length_clean": 602,
+        "length_ocr": 565
+    },
+    "43": {
+        "unigram_precision": 0.9775280898876404,
+        "unigram_recall": 0.9775280898876404,
+        "unigram_f1": 0.9775280898876404,
+        "cer": 0.045364891518737675,
+        "wer": 0.125,
+        "length_clean": 507,
+        "length_ocr": 506
+    },
+    "44": {
+        "unigram_precision": 0.8814814814814815,
+        "unigram_recall": 0.6685393258426966,
+        "unigram_f1": 0.7603833865814698,
+        "cer": 0.32323232323232326,
+        "wer": 0.4166666666666667,
+        "length_clean": 1881,
+        "length_ocr": 1465
+    },
+    "45": {
+        "unigram_precision": 0.8731988472622478,
+        "unigram_recall": 0.7248803827751196,
+        "unigram_f1": 0.792156862745098,
+        "cer": 0.28535246939636977,
+        "wer": 0.40097799511002447,
+        "length_clean": 2369,
+        "length_ocr": 2003
+    },
+    "46": {
+        "unigram_precision": 0.1111111111111111,
+        "unigram_recall": 0.5,
+        "unigram_f1": 0.1818181818181818,
+        "cer": 6.142857142857143,
+        "wer": 4.5,
+        "length_clean": 7,
+        "length_ocr": 45
+    },
+    "47": {
+        "unigram_precision": 0.8333333333333334,
+        "unigram_recall": 0.8333333333333334,
+        "unigram_f1": 0.8333333333333334,
+        "cer": 0.09302325581395349,
+        "wer": 1.0,
+        "length_clean": 43,
+        "length_ocr": 42
+    }
+}
