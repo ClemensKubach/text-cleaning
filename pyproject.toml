@@ -33,8 +33,10 @@ line-length = 120
 
 [tool.setuptools]
 include-package-data = true
-packages = ["text_cleaning"]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [project.scripts]
 text-cleaning = "text_cleaning.main:main"
