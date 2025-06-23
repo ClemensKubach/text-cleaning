@@ -5,17 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "torch>=2.2.1",
-    "transformers>=4.38.2",
-    "accelerate>=0.27.2",
-    "tqdm>=4.67.1",
+    "torch",
+    "transformers",
+    "accelerate",
+    "tqdm",
     "levenshtein>=0.27.1",
     "scikit-learn",
     "nltk>=3.9.1",
     "rouge-score>=0.1.2",
     "protobuf",
-    "fire>=0.7.0",
-    "datasets>=2.18.0",
+    "fire",
+    "datasets",
     "google-genai>=1.20.0",
     "huggingface-hub>=0.32.4",
     "strenum>=0.4.15",
