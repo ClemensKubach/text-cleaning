@@ -359,7 +359,7 @@ def denoise(
 
 
 def denoise_dataset(
-    noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
+    noisy_data_path: Path | str = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
     model_name: str = "google/gemma-3-1b-it",
     model_type: Literal["causal", "seq2seq"] = "causal",
     in_context: Literal["simple", "complex", "None"] = "None",
@@ -368,14 +368,15 @@ def denoise_dataset(
     subset: list[int] | None = None,
     is_finetuned: bool = False,
 ) -> tuple[dict[int, str], Path]:
-    """
-    Denoise a dataset of text.
+    """Denoise a dataset of text.
+
     The dataset is expected to be in the format of a JSON file with the following structure:
     {
         "1": "...",
         "2": "...",
         ...
     }
+
     Args:
         noisy_data_path: The path to the noisy dataset.
         model_name: The name of the model to use for denoising.
@@ -391,6 +392,7 @@ def denoise_dataset(
         - The denoised data dictionary
         - The path where the denoised data was saved
     """
+    noisy_data_path = Path(noisy_data_path)
     noisy_data = load_data(noisy_data_path)
     logger.info(f"Loaded noisy data from {noisy_data_path}")
 
