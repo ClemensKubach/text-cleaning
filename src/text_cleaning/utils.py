@@ -13,7 +13,6 @@ from huggingface_hub.errors import HfHubHTTPError, OfflineModeIsEnabled
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
-    AutoModel,
     AutoTokenizer,
 )
 from transformers.pipelines import pipeline, Pipeline
@@ -21,7 +20,6 @@ from transformers.utils.quantization_config import BitsAndBytesConfig
 
 from text_cleaning.constants import (
     DATA_DIR,
-    IN_COLAB,
     SYNTHETIC_CLEAN_DATASET_PATH,
     SYNTHETIC_OCR_DATASET_PATH,
     WANDB_DIR,
@@ -60,16 +58,8 @@ def setup_wandb(project_name: str = "mnlp-h2"):
 
 
 def _read_hf_token() -> str | None:
-    """Read the HF_TOKEN from the userdata or the environment variables."""
-    if IN_COLAB:
-        try:
-            from google.colab import userdata  # type: ignore[import-untyped]
-
-            return userdata.get("HF_TOKEN")
-        except (KeyError, ImportError):
-            return None
-    else:
-        return os.environ.get("HF_TOKEN", None)
+    """Read the HF_TOKEN from the environment variables."""
+    return os.environ.get("HF_TOKEN", None)
 
 
 def do_blocking_hf_login():
