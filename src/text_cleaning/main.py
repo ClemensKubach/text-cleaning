@@ -9,7 +9,7 @@ def main():
     from text_cleaning.denoising.denoising import denoise_dataset
     from text_cleaning.denoising.fine_tuning import prepare_fine_tuning
     from text_cleaning.evaluation.classic_metrics.evaluation import run_evaluation
-    from text_cleaning.evaluation.gemini_as_judge.judge_run import run_judge_evaluation
+    from text_cleaning.evaluation.gemini_as_judge.judge_run import evaluate_judge
     from text_cleaning.utils import (
         do_blocking_hf_login,
         setup_logging,
@@ -31,7 +31,7 @@ def main():
             "merge_datasets": merge_datasets,
             "cache_model": cache_model_and_tokenizer,
             "evaluate_metrics": run_evaluation,
-            "evaluate_judge":run_judge_evaluation
+            "evaluate_judge":evaluate_judge
 
         },
         serialize=lambda _: None,
