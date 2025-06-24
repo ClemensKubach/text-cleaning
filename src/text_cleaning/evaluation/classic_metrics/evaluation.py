@@ -69,34 +69,7 @@ def evaluate_all(clean_text: str, noisy_text: str) -> dict:
 
 
 
-"""method to evaluate the CER - error rate in terms of the character operation to character number ratio"""
 
-
-# def evaluate_CER(clean_text: str, noisy_text: str) -> float:
-#     # divisor = len(clean_text)
-#     # print(divisor)
-#     # return count_all_operations(clean_text, noisy_text) / divisor
-#     cer_metric = load("cer")
-    
-
-#     return cer(noisy_text,clean_text)
-
-
-"""method to evaluate the WER - error rate in terms of the character operation to words number ratio"""
-
-
-# def evaluate_WER(clean_text: str, noisy_text: str) -> float:
-#     # tokens = word_tokenize(clean_text)
-#     # divisor = len(tokens)
-#     # return count_all_operations(clean_text, noisy_text) / divisor
-#     wer_metric = load("wer")
-#     return wer(noisy_text, clean_text)
-
-
-"""perplexity will be evaluated, empty for now"""
-
-
-"""the main pipeline for evaluating the cleaning chunk by chunk  """
 
 
 def evaluate_dataset(
@@ -143,44 +116,68 @@ def evaluate_dataset(
     return scores, scores_file_path
 
 
-if __name__ == "__main__":
-    load_dotenv()
-    setup_logging()
+# if __name__ == "__main__":
+#     load_dotenv()
+#     setup_logging()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--metric",
-        type=str,
-        default="ALL",
-        choices=["ALL"],
-        help="Evaluation metric to use",
-    )
-    parser.add_argument(
-        "--task",
-        type=str,
-        default="single",
-        choices=["single"],
-        help="Whether to evaluate denoised output against the clean text, or compare denoised and noisy output ",
-    )
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument(
+#         "--metric",
+#         type=str,
+#         default="ALL",
+#         choices=["ALL"],
+#         help="Evaluation metric to use",
+#     )
+#     parser.add_argument(
+#         "--task",
+#         type=str,
+#         default="single",
+#         choices=["single"],
+#         help="Whether to evaluate denoised output against the clean text, or compare denoised and noisy output ",
+#     )
 
-    parser.add_argument(
-        "--denoised_data_name",
-        type=str,
-        required=True,
-        help="the path to the denoised output",
-    )
+#     parser.add_argument(
+#         "--denoised_data_name",
+#         type=str,
+#         required=True,
+#         help="the path to the denoised output",
+#     )
     
 
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
 
+#     metric_map = {
+#         "ALL" : evaluate_all
+#     }
+
+#     evaluation_method = metric_map[args.metric]
+#     evaluation_task = args.task
+#     denoised_data_name = args.denoised_data_name
+#     evaluate_dataset(
+#         evaluation_method=evaluation_method, denoised_data_name=denoised_data_name, evaluation_task=evaluation_task
+#     )
+
+
+def run_evaluation(
+    denoised_data_name: str,
+    metric: str = "ALL",
+    task: str = "single"
+):
+    """
+    Wrapper to run evaluation from CLI with Python Fire.
+
+    Args:
+        denoised_data_name: filename of denoised data inside DENOISED_DIR
+        metric: which metric to use ("ALL" supported)
+        task: evaluation task ("single" supported)
+    """
     metric_map = {
-        "ALL" : evaluate_all
+        "ALL": evaluate_all
     }
-
-    evaluation_method = metric_map[args.metric]
-    evaluation_task = args.task
-    denoised_data_name = args.denoised_data_name
-    evaluate_dataset(
-        evaluation_method=evaluation_method, denoised_data_name=denoised_data_name, evaluation_task=evaluation_task
+    evaluation_method = metric_map[metric]
+    return evaluate_dataset(
+        evaluation_method=evaluation_method,
+        denoised_data_name=denoised_data_name,
+        evaluation_task=task
     )

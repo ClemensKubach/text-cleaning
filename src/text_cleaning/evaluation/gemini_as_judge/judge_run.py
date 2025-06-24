@@ -256,17 +256,28 @@ def generate( input_texts: dict[str]):
     raise RuntimeError("Max retries exceeded due to server overload.")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--input_names",
-        nargs="+",
-        type=str,
-        required=True,
-        help="the name of the input  files that are to be evaluated.the format should be "
-        "name_1,name_2 "
-    )
-    args = parser.parse_args()
-    # evaluation_technique = args.evaluation_technique
-    input_names = [element for element in args.input_names]
-    evaluate_dataset(input_names=input_names)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument(
+#         "--input_names",
+#         nargs="+",
+#         type=str,
+#         required=True,
+#         help="the name of the input  files that are to be evaluated.the format should be "
+#         "name_1,name_2 "
+#     )
+#     args = parser.parse_args()
+#     # evaluation_technique = args.evaluation_technique
+#     input_names = [element for element in args.input_names]
+#     evaluate_dataset(input_names=input_names)
+
+
+
+def run_judge_evaluation(input_names: list[str]):
+    """
+    Wrapper for CLI usage with Python Fire to run judge evaluation.
+
+    Args:
+        input_names: List of denoised filenames to compare (e.g. ["file1.json", "file2.json"])
+    """
+    return evaluate_dataset(input_names)

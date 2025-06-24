@@ -8,6 +8,8 @@ def main():
 
     from text_cleaning.denoising.denoising import denoise_dataset
     from text_cleaning.denoising.fine_tuning import prepare_fine_tuning
+    from text_cleaning.evaluation.classic_metrics.evaluation import run_evaluation
+    from text_cleaning.evaluation.gemini_as_judge.judge_run import run_judge_evaluation
     from text_cleaning.utils import (
         do_blocking_hf_login,
         setup_logging,
@@ -28,6 +30,9 @@ def main():
             "export_wandb": export_wandb,
             "merge_datasets": merge_datasets,
             "cache_model": cache_model_and_tokenizer,
+            "evaluate_metrics": run_evaluation,
+            "run_judge_evaluation":run_judge_evaluation
+
         },
         serialize=lambda _: None,
     )
