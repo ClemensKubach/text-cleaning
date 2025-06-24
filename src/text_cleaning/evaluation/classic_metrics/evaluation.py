@@ -90,8 +90,8 @@ def evaluate_dataset(
         The scores.
     """
     denoised_data_path = DENOISED_DIR / denoised_data_name
-    noisy_data = load_data(noisy_data_path)
-    logger.info(f"Loaded noisy data from {noisy_data_path}")
+    #noisy_data = load_data(noisy_data_path)
+    #logger.info(f"Loaded noisy data from {noisy_data_path}")
     clean_data = load_data(cleaned_data_path)
     logger.info(f"Loaded clean data from {cleaned_data_path}")
     denoised_data = load_data(denoised_data_path)
@@ -99,7 +99,7 @@ def evaluate_dataset(
 
     scores: dict[int, float] = {}
     for i in tqdm(denoised_data):
-        noisy_text = noisy_data[i]
+        #noisy_text = noisy_data[i]
         clean_text = clean_data[i]
         denoised_text = denoised_data[i]
         if evaluation_task == "single":
@@ -161,6 +161,7 @@ def evaluate_dataset(
 
 def run_evaluation(
     denoised_data_name: str,
+    cleaned_data_path: str,
     evaluation_method_name: str = "ALL",
     task: str = "single"
 ):
@@ -171,5 +172,6 @@ def run_evaluation(
     return evaluate_dataset(
         evaluation_method=evaluation_method,
         denoised_data_name=denoised_data_name,
-        evaluation_task=task
+        evaluation_task=task,
+        cleaned_data_path=cleaned_data_path
     )
