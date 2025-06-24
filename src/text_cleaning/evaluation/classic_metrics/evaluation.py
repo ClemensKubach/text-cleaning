@@ -106,8 +106,17 @@ def evaluate_dataset(
             scores[i] = score
 
 
-    model_identifier = denoised_data_path.split('/')[-1]
-    scores_file_path  = DATA_DIR /  model_identifier
+    # model_identifier = denoised_data_path.split('/')[-1]
+    # scores_file_path  = DATA_DIR /  model_identifier
+
+    model_identifier = Path(denoised_data_path).stem  # filename without extension
+    scores_file_name = f"{model_identifier}_classic_scores.json"
+    scores_file_path = Path(denoised_data_path).parent / scores_file_name
+
+    save_data(scores_file_path, scores)
+    logger.info(f"Scores saved to {scores_file_path}")
+
+    return scores, scores_file_path
     
    
     save_data(scores_file_path, scores)
