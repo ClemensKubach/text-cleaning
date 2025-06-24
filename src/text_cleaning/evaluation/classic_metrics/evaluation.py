@@ -161,21 +161,13 @@ def evaluate_dataset(
 
 def run_evaluation(
     denoised_data_name: str,
-    metric: str = "ALL",
+    evaluation_method_name: str = "ALL",
     task: str = "single"
 ):
-    """
-    Wrapper to run evaluation from CLI with Python Fire.
-
-    Args:
-        denoised_data_name: filename of denoised data inside DENOISED_DIR
-        metric: which metric to use ("ALL" supported)
-        task: evaluation task ("single" supported)
-    """
     metric_map = {
         "ALL": evaluate_all
     }
-    evaluation_method = metric_map[metric]
+    evaluation_method = metric_map[evaluation_method_name]
     return evaluate_dataset(
         evaluation_method=evaluation_method,
         denoised_data_name=denoised_data_name,
