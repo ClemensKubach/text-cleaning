@@ -74,8 +74,7 @@ def evaluate_all(clean_text: str, noisy_text: str) -> dict:
 
 def evaluate_dataset(
     evaluation_method: Callable[[str, str], float],
-    denoised_data_name: str,
-    noisy_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json",
+    denoised_data_path: str,
     cleaned_data_path: Path = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json",
     evaluation_task: str = "single",
     model_path: str = None,
@@ -89,7 +88,7 @@ def evaluate_dataset(
     Returns:
         The scores.
     """
-    denoised_data_path = DENOISED_DIR / denoised_data_name
+    # denoised_data_path = DENOISED_DIR / denoised_data_name
     #noisy_data = load_data(noisy_data_path)
     #logger.info(f"Loaded noisy data from {noisy_data_path}")
     clean_data = load_data(cleaned_data_path)
@@ -107,7 +106,7 @@ def evaluate_dataset(
             scores[i] = score
 
 
-    model_identifier = denoised_data_name.split('/')[-1]
+    model_identifier = denoised_data_path.split('/')[-1]
     scores_file_path  = DATA_DIR / "evaluation_scores" / "classic_evaluations"/ model_identifier
     
    
@@ -160,7 +159,7 @@ def evaluate_dataset(
 
 
 def run_evaluation(
-    denoised_data_name: str,
+    denoised_data_path: str,
     cleaned_data_path: str,
     evaluation_method_name: str = "ALL",
     task: str = "single"
@@ -171,7 +170,7 @@ def run_evaluation(
     evaluation_method = metric_map[evaluation_method_name]
     return evaluate_dataset(
         evaluation_method=evaluation_method,
-        denoised_data_name=denoised_data_name,
+        denoised_data_path=denoised_data_path,
         evaluation_task=task,
         cleaned_data_path=cleaned_data_path
     )
