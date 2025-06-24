@@ -261,11 +261,12 @@ def generate( input_texts: dict[str]):
 
 
 
-def evaluate_judge(clean_data_path: str,noisy_data_path: str ,denoised_data_paths: list[str]):
+def evaluate_judge(clean_data_path: str,noisy_data_path: str ,denoised_data_path_1: str, denoised_data_path_2: str):
     """
     Wrapper for CLI usage with Python Fire to run judge evaluation.
 
     Args:
         input_names: List of denoised filenames to compare (e.g. ["file1.json", "file2.json"])
     """
+    denoised_data_paths = [denoised_data_path_1,denoised_data_path_2]
     return evaluate_dataset(clean_data_path=clean_data_path,noisy_data_path=noisy_data_path,input_paths=denoised_data_paths)
