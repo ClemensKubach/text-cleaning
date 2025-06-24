@@ -12,6 +12,7 @@ from google.genai import errors
 import random 
 import json
 from text_cleaning.constants import DATA_DIR, DENOISED_DIR
+from pathlib import Path
 
 
 def is_json(myjson):
@@ -22,18 +23,14 @@ def is_json(myjson):
   return True
 
 
-OCR_TEXT = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_ocr.json"
-CLEAN_TEXT = DATA_DIR / "ocr_datasets" / "eng" / "the_vampyre_clean.json"
-SAVE_PATH = "/workspaces/mnlp_project_2/data/evaluation_scores/judge_evaluations/"
 
-print(CLEAN_TEXT)
 
 MAX_RETRIES = 5
 
 logger = logging.getLogger(__name__)
 
 
-def evaluate_dataset(input_names: list[str]) -> dict[int, float]:
+def evaluate_dataset(input_paths: list[str],clean_data_path,noisy_data_path) -> dict[int, float]:
     """Evaluate the denoised data.
 
     Args:
@@ -41,18 +38,20 @@ def evaluate_dataset(input_names: list[str]) -> dict[int, float]:
     Returns:
         The scores.
     """
-    clean_data = load_data(CLEAN_TEXT)
-    logger.info(f"Loaded clean data from {CLEAN_TEXT}")
-    noisy_data = load_data(OCR_TEXT)
-    logger.info(f"Loaded OCR data from {OCR_TEXT}")
+    clean_data = load_data(clean_data_path)
+    logger.info(f"Loaded clean data from {clean_data_path}")
+    noisy_data = load_data(noisy_data_path)
+    logger.info(f"Loaded OCR data from {noisy_data_path}")
     denoised_data = []
-    for i in range(len(input_names)):
-        denoised_data.append(load_data(DENOISED_DIR / input_names[i]))
-        logger.info(f"Loaded denoised data {i} from {input_names[i]}")
+    for i in range(len(input_paths)):
+        denoised_data.append(load_data(input_paths[i]))
+        logger.info(f"Loaded denoised data {i} from {input_paths[i]}")
 
     scores: dict[int, str] = {}
-    '''iterating over the keys of the jsons, ASSUMING ALL THE DENOISED DATAS HAVE THE SAME KEYS'''
+    '''iterating over the keys of the jsons'''
     for i in denoised_data[0]:
+        if i not in denoised_data[1]:
+            continue
         texts_dict = {}
         texts_dict["clean_text"] = clean_data[i]
         texts_dict["ocr_text"] = noisy_data[i]
@@ -62,10 +61,11 @@ def evaluate_dataset(input_names: list[str]) -> dict[int, float]:
         if prob < 0.5:
             texts_dict["denoised_text_1"] = denoised_data[0][i]
             texts_dict["denoised_text_2"] = denoised_data[1][i]
-            evaluation = generate( input_texts=texts_dict)
+            evaluation = generate(input_texts=texts_dict)
             if not is_json(evaluation):
                 scores[i] = None
                 continue
+            evaluation = json.loads(evaluation)  # parse JSON string to dict
         else:
             texts_dict["denoised_text_1"] = denoised_data[1][i]
             texts_dict["denoised_text_2"] = denoised_data[0][i]
@@ -76,16 +76,18 @@ def evaluate_dataset(input_names: list[str]) -> dict[int, float]:
             evaluation_json = json.loads(evaluation)
             for key in evaluation_json:
                 evaluation_json[key] = changed_mapping[evaluation_json[key]]
-            evaluation = evaluation_json
+            evaluation = evaluation_json  # dict
             
         scores[i] = evaluation
 
-    str_input_paths = f"{input_names[0].split('_')[-1][:-5]}_AGAINST_{input_names[1].split('_')[-1][:-5]}"
 
-    scores_file_path = SAVE_PATH + str_input_paths
+    model_identifier_1 = Path(input_paths[0]).stem 
+    model_identifier_2 = Path(input_paths[1]).stem 
+    scores_file_name = f"{model_identifier_1}" + "_Against_" + f"{model_identifier_2}" +".json"
+    scores_file_path = Path(input_paths[0]).parent / scores_file_name
+
     save_data(scores_file_path, scores)
     logger.info(f"Scores saved to {scores_file_path}")
-    return scores, scores_file_path
 
 
 def generate( input_texts: dict[str]):
@@ -256,28 +258,14 @@ def generate( input_texts: dict[str]):
     raise RuntimeError("Max retries exceeded due to server overload.")
 
 
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument(
-#         "--input_names",
-#         nargs="+",
-#         type=str,
-#         required=True,
-#         help="the name of the input  files that are to be evaluated.the format should be "
-#         "name_1,name_2 "
-#     )
-#     args = parser.parse_args()
-#     # evaluation_technique = args.evaluation_technique
-#     input_names = [element for element in args.input_names]
-#     evaluate_dataset(input_names=input_names)
 
 
 
-def run_judge_evaluation(input_names: list[str]):
+def evaluate_judge(clean_data_path: str,noisy_data_path: str ,denoised_data_paths: list[str]):
     """
     Wrapper for CLI usage with Python Fire to run judge evaluation.
 
     Args:
         input_names: List of denoised filenames to compare (e.g. ["file1.json", "file2.json"])
     """
-    return evaluate_dataset(input_names)
+    return evaluate_dataset(clean_data_path=clean_data_path,noisy_data_path=noisy_data_path,input_paths=denoised_data_paths)

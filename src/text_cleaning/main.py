@@ -31,7 +31,7 @@ def main():
             "merge_datasets": merge_datasets,
             "cache_model": cache_model_and_tokenizer,
             "evaluate_metrics": run_evaluation,
-            "run_judge_evaluation":run_judge_evaluation
+            "evaluate_judge":run_judge_evaluation
 
         },
         serialize=lambda _: None,
