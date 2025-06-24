@@ -18,7 +18,7 @@ from transformers import (
 from transformers.pipelines import pipeline, Pipeline
 from transformers.utils.quantization_config import BitsAndBytesConfig
 
-from src.text_cleaning.constants import (
+from text_cleaning.constants import (
     DATA_DIR,
     SYNTHETIC_CLEAN_DATASET_PATH,
     SYNTHETIC_OCR_DATASET_PATH,
