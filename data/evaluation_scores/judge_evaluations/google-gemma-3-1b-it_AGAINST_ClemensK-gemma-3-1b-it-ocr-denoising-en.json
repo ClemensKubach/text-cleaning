@@ -1,0 +1,194 @@
+{
+    "0": "\n{\n\"faithfulness\": 0,\n\"fluency\": 1,\n\"completeness\": 1,\n\"no_hallucinations\": 1,\n\"overall_winner\": 1\n}",
+    "1": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 0,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "2": {
+        "faithfulness": 0,
+        "fluency": 0,
+        "completeness": 0,
+        "no_hallucinations": 0,
+        "overall_winner": 2
+    },
+    "3": "{\n\"faithfulness\": 1,\n\"fluency\": 1,\n\"completeness\": 0,\n\"no_hallucinations\": 1,\n\"overall_winner\": 1\n}",
+    "4": {
+        "faithfulness": 1,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "5": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 0,\n\"overall_winner\": 2\n}",
+    "6": {
+        "faithfulness": 2,
+        "fluency": 1,
+        "completeness": 0,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "7": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "8": "{\n\"faithfulness\": 1,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "9": {
+        "faithfulness": 1,
+        "fluency": 1,
+        "completeness": 1,
+        "no_hallucinations": 1,
+        "overall_winner": 1
+    },
+    "10": {
+        "faithfulness": 1,
+        "fluency": 2,
+        "completeness": 0,
+        "no_hallucinations": 1,
+        "overall_winner": 1
+    },
+    "11": "{\n\"faithfulness\": 1,\n\"fluency\": 0,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 1\n}",
+    "12": null,
+    "13": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "14": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "15": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "16": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 0,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "17": "{\n\"faithfulness\": 1,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "18": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "19": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "20": {
+        "faithfulness": 1,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "21": "{\n\"faithfulness\": 1,\n\"fluency\": 1,\n\"completeness\": 1,\n\"no_hallucinations\": 1,\n\"overall_winner\": 1\n}",
+    "22": null,
+    "23": {
+        "faithfulness": 1,
+        "fluency": 1,
+        "completeness": 1,
+        "no_hallucinations": 1,
+        "overall_winner": 1
+    },
+    "24": null,
+    "25": {
+        "faithfulness": 1,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "26": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "27": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "28": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "29": null,
+    "30": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "31": {
+        "faithfulness": 1,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "32": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "33": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 2,\n\"overall_winner\": 2\n}",
+    "34": "{\n\"faithfulness\": 2,\n\"fluency\": 0,\n\"completeness\": 0,\n\"no_hallucinations\": 2,\n\"overall_winner\": 2\n}",
+    "35": "{\n\"faithfulness\": 2,\n\"fluency\": 1,\n\"completeness\": 2,\n\"no_hallucinations\": 2,\n\"overall_winner\": 2\n}",
+    "36": {
+        "faithfulness": 1,
+        "fluency": 0,
+        "completeness": 0,
+        "no_hallucinations": 1,
+        "overall_winner": 1
+    },
+    "37": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 0,\n\"no_hallucinations\": 0,\n\"overall_winner\": 2\n}",
+    "38": "{\n\"faithfulness\": 0,\n\"fluency\": 2,\n\"completeness\": 0,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "39": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "40": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 0,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}",
+    "41": {
+        "faithfulness": 2,
+        "fluency": 1,
+        "completeness": 0,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "42": "{\n\"faithfulness\": 1,\n\"fluency\": 2,\n\"completeness\": 1,\n\"no_hallucinations\": 1,\n\"overall_winner\": 1\n}",
+    "43": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "44": "{\n\"faithfulness\": 2,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 2,\n\"overall_winner\": 2\n}",
+    "45": {
+        "faithfulness": 2,
+        "fluency": 2,
+        "completeness": 2,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "46": {
+        "faithfulness": 0,
+        "fluency": 2,
+        "completeness": 0,
+        "no_hallucinations": 2,
+        "overall_winner": 2
+    },
+    "47": "{\n\"faithfulness\": 1,\n\"fluency\": 2,\n\"completeness\": 2,\n\"no_hallucinations\": 1,\n\"overall_winner\": 2\n}"
+}

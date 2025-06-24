@@ -1,0 +1,53 @@
+{
+    
+    "0": {
+        "faithfulness": 2,
+        "fluency": 0,
+        "completeness": 0,
+        "no_hallucinations": 0,
+        "overall_winner": 2
+    },
+    
+    "5": {
+        "faithfulness": 1,
+        "fluency": 0,
+        "completeness": 0,
+        "no_hallucinations": 0,
+        "overall_winner": 1
+    },
+    "36": {
+        "faithfulness": 0,
+        "fluency": 0,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "37": {
+        "faithfulness": 0,
+        "fluency": 0,
+        "completeness": 2,
+        "no_hallucinations": 1,
+        "overall_winner": 2
+    },
+    "38": {
+        "faithfulness": 0,
+        "fluency": 0,
+        "completeness": 0,
+        "no_hallucinations": 0,
+        "overall_winner": 2
+    },
+    "43": {
+        "faithfulness": 1,
+        "fluency": 1,
+        "completeness": 2,
+        "no_hallucinations": 0,
+        "overall_winner": 1
+    },
+    "47": {
+        "faithfulness": 2,
+        "fluency": 1,
+        "completeness": 2,
+        "no_hallucinations": 0,
+        "overall_winner": 2
+    }
+}

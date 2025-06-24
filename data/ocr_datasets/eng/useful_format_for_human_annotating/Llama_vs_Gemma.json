@@ -1,0 +1,37 @@
+{
+  "0": {
+    "model1": "THE VAMPIRE",
+    "model2": "THE VAMPYRE",
+    "ground_truth": "THE VAMPYRE;"
+  },
+  "5": {
+    "model1": "The universal belief is just, that a person sucked by a vampire becomes a vampire himself, and sucks in his turn.",
+    "model2": "The universal belief is, that a person sucked by a vampire becomes a vampire himself, arid sucks in turn.",
+    "ground_truth": "The universal belief is, that a person sucked by a vampyre becomes a vampyre himself, and sucks in his turn."
+  },
+  "36": {
+    "model1": "A. How do I extract the text from the original text containing an account of Lord Byron's residence in Mitylene?",
+    "model2": "EXTRACT OF A LETTER, CONTAINING AN ACCOUNT OF LORD BYRON'S RESIDENCE IN THE ISLAND OF MITYLENE.",
+    "ground_truth": "EXTRACT OF A LETTER, CONTAINING AN ACCOUNT OF LORD BYRON'S RESIDENCE IN THE ISLAND OF MITYLENE."
+  },
+  "37": {
+    "model1": "account of Lord Byron's residence",
+    "model2": "ACOUNT OF LORD BYRON'S RESIDENCE, &c.",
+    "ground_truth": "ACCOUNT OF LORD BYRON'S RESIDENCE, &c."
+  },
+  "38": {
+    "model1": "The world was already there, before him, where to choose his place of rest, and Providence his guide.",
+    "model2": "the world was all before him, where to choose his place of rest, and providence his guide.",
+    "ground_truth": "\"The world was all before him, where to choose his place of rest, and Providence his guide.\""
+  },
+  "43": {
+    "model1": "The old man sat on the lawn, surrounded by a small streamlet that glided away, grapes, oranges, and limes clustered together on its borders, and under the shade of two large myrtle bushes, a marble seat with an ornamental wooden back was placed, on which we were told, the lord passed his evenings and nights, reading, writing, and talking to himself. \"I suppose,\" said the old man, \"praying\" for he was very devoted, \"and always attended church twice a week, blessed Sundays.\"",
+    "model2": "On the left hand as we entered the house, a small streamlet glided away, grapes, oranges, and limes were clustering together on it’s borders, and under the shade of two large myrtle bushes, a marble seat with an ornamental wooden back was placed, on which we were told, the lord passed merry of his evenings and nights till twelve o’clock, reading, writing, and talking to himself. I suppose, he was very devout, and always attended our church twice a week, besides Sundays.",
+    "ground_truth": "On the left hand as we entered the house, a small streamlet glided away, grapes, oranges and limes were clustering together on its borders, and under the shade of two large myrtle bushes, a marble seat with an ornamental wooden back was placed, on which we were told, the lord passed many of his evenings and nights till twelve o'clock, reading, writing, and talking to himself. \"I suppose,\" said the old man, \"praying\" for he was very devout, \"and always attended our church twice a week, besides Sundays.\""
+  },
+  "47": {
+    "model1": "The Gilet, Printer, Crown-court, Fleet-street.",
+    "model2": "Giblet Printer Crown-court Fleet-street",
+    "ground_truth": "Gillet, Printer, Crown-court, Fleet-street."
+  }
+}
