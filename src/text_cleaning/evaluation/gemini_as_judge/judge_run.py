@@ -241,7 +241,6 @@ def generate( input_texts: dict[str]):
                 config=generate_content_config,
             ):
                 if chunk.text is not None:
-                    print(chunk.text)
                     response_text += chunk.text
                 # print(chunk.text, end="")
                 # response_text += chunk.text
