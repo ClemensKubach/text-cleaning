@@ -107,7 +107,7 @@ def evaluate_dataset(
 
 
     model_identifier = denoised_data_path.split('/')[-1]
-    scores_file_path  = DATA_DIR / "evaluation_scores" / "classic_evaluations"/ model_identifier
+    scores_file_path  = DATA_DIR /  model_identifier
     
    
     save_data(scores_file_path, scores)
