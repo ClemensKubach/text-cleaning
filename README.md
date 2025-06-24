@@ -67,12 +67,13 @@ text-cleaning merge_datasets --noisy_datasets '["src/text_cleaning/ocr_text_crea
 
 ```bash
 text-cleaning eval-classic --metric "WER" --task "single" --denoised_data_path "data/ocr_datasets/eng/the_vampyre_ocr_denoised_google-gemma-3-1b-it.json"
+text-cleaning evaluate_metrics --denoised_data_path "{DENOISED_OCR_PATH}' --cleaned_data_path  "{CLEAN_DATA_PATH}"
 ```
 
 ### Evaluation with the Gemini as a judge 
 
 ```bash
- text-cleaning eval-gemini --evaluation_technique "pairwise" --input_names "the_vampyre_ocr_denoised_google-gemma-3-1b-it.json" "the_vampyre_ocr_denoised_facebook-bart-base.json"
+text-cleaning evaluate_judge --clean_data_path "{CLEAN_DATA_PATH}" --noisy_data_path "{NOISY_DATA_PATH}" --denoised_data_path_1 "{DENOISED_OCR_PATH_1}" --denoised_data_path_2 "{DENOISED_OCR_PATH_2}
 ```
 
 ### Fine-tuning with LLaMA-Factory
