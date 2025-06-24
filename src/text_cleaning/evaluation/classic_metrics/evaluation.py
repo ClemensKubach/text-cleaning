@@ -6,15 +6,15 @@ from nltk.tokenize import word_tokenize
 from rouge_score import rouge_scorer
 from tqdm import tqdm
 import Levenshtein
-from src.text_cleaning.constants import DATA_DIR, DENOISED_DIR
-from src.text_cleaning.utils import load_data, save_data
+from text_cleaning.constants import DATA_DIR, DENOISED_DIR
+from text_cleaning.utils import load_data, save_data
 import argparse
 from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM
 import torch
 
 
 from dotenv import load_dotenv
-from src.text_cleaning.utils import setup_logging
+from text_cleaning.utils import setup_logging
 from evaluate import load
 
 

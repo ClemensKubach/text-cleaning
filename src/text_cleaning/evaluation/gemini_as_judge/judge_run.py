@@ -5,13 +5,13 @@ import os
 from google import genai
 from google.genai import types
 import argparse
-from src.text_cleaning.utils import load_data, save_data
+from text_cleaning.utils import load_data, save_data
 import logging
 import time
 from google.genai import errors
 import random 
 import json
-from src.text_cleaning.constants import DATA_DIR, DENOISED_DIR
+from text_cleaning.constants import DATA_DIR, DENOISED_DIR
 
 
 def is_json(myjson):
